@@ -5,4 +5,4 @@
 - External variables do not read by Java (?).
 - Set the coefficients both for Trading days and user defined variables according to "usrdef.varCoef" of the JSON (only if "transform.function" field is not "Auto")
 - usrDefVariables check if it is possible to assign them to "Trend", "Seasonal", ecc...
-- see the DataReaderExtReg of R to see how to set the userDefinedCoefficients (something like TramoSeatsSpec.getCore().getTramoSpecification().getRegression()... instead of TramoSeatsSpec.getRegression(). This is useful also for assignment to Trend, Seasonal, ...) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+- see the DataReaderExtReg of R to see how to set the userDefinedCoefficients (something like TramoSeatsSpec.getCore().getTramoSpecification().getRegression()... instead of TramoSeatsSpec.getRegression(). This is useful also for assignment to Trend, Seasonal, ...) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DONE BUT I DON'T KNOW IF WORKING

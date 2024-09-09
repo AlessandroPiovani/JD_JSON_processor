@@ -700,12 +700,12 @@ public class TSmodelSetup {
     private boolean isValidDate(String dateStr) {
            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         try {
-            // Tenta di fare il parsing della stringa
+            // Try to parse the string
             LocalDate date = LocalDate.parse(dateStr, formatter);
-            // Se la data viene parsata correttamente, la stringa è ben formattata
+            // If the Date is correctly parsed, then the string is correctly formatted
             return true;
         } catch (DateTimeParseException e) {
-            // Se viene lanciata un'eccezione, la stringa non è ben formattata
+            // If an exception is catched, the Date is not well formatted
             return false;
         }
     }
