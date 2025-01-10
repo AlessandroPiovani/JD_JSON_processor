@@ -50,11 +50,11 @@ public class DestSpecificationsModel {
     @JsonProperty("estimate.to")
     private String estimateTo;
     @JsonProperty("estimate.first")
+    @JsonDeserialize(using = StringOrNumberDeserializer.class)
     private String estimateFirst;
-    private int estimateFirstN;
     @JsonProperty("estimate.last")
+    @JsonDeserialize(using = StringOrNumberDeserializer.class)
     private String estimateLast;
-    private int estimateLastN;
     @JsonProperty("estimate.exclFirst")
     private int estimateExclFirst;
     @JsonProperty("estimate.exclLast")
@@ -113,11 +113,11 @@ public class DestSpecificationsModel {
     @JsonProperty("outlier.to")
     private String outlierTo;
     @JsonProperty("outlier.first")
+    @JsonDeserialize(using = StringOrNumberDeserializer.class)
     private String outlierFirst;
-    private int outlierFirstN;
     @JsonProperty("outlier.last")
+    @JsonDeserialize(using = StringOrNumberDeserializer.class)
     private String outlierLast;
-    private int outlierLastN;
     @JsonProperty("outlier.exclFirst")
     private int outlierExclFirst;
     @JsonProperty("outlier.exclLast")
@@ -490,22 +490,20 @@ public class DestSpecificationsModel {
         this.estimateTo = isNull(estimateTo)?null:estimateTo;
     }
 
-    public int getEstimateFirst() {
-        return estimateFirstN;
+    public String getEstimateFirst() {
+        return estimateFirst;
     }
 
     public void setEstimateFirst(String estimateFirst) {
         this.estimateFirst = estimateFirst;
-        if (!isNull(estimateFirst)) this.estimateFirstN=Integer.parseInt(estimateFirst);
     }
 
-    public int getEstimateLast() {
-        return estimateLastN;
+    public String getEstimateLast() {
+        return estimateLast;
     }
 
     public void setEstimateLast(String estimateLast) {
         this.estimateLast = estimateLast;
-        if (!isNull(estimateLast)) this.estimateLastN=Integer.parseInt(estimateLast);
     }
 
     public int getEstimateExclFirst() {
@@ -733,22 +731,20 @@ public class DestSpecificationsModel {
         this.outlierTo = isNull(outlierTo)?null:outlierTo;
     }
 
-    public int getOutlierFirst() {
-        return outlierFirstN;
+    public String getOutlierFirst() {
+        return outlierFirst;
     }
 
     public void setOutlierFirst(String outlierFirst) {
         this.outlierFirst = outlierFirst;
-        if (!isNull(outlierFirst)) this.outlierFirstN=Integer.parseInt(outlierFirst);
     }
 
-    public int getOutlierLast() {
-        return outlierLastN;
+    public String getOutlierLast() {
+        return outlierLast;
     }
 
     public void setOutlierLast(String outlierLast) {
         this.outlierLast = outlierLast;
-        if (!isNull(outlierLast)) this.outlierLastN=Integer.parseInt(outlierLast);
     }
 
     public int getOutlierExclFirst() {
@@ -1107,5 +1103,17 @@ public class DestSpecificationsModel {
         this.easterCoef = easterCoef;
     }
 
+    // legge eventuali interi come stringhe 3 --> "3", "NA" --> "NA"
+    public static class StringOrNumberDeserializer extends JsonDeserializer<String> {
+        @Override
+        public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            if (p.getCurrentToken().isNumeric()) {
+                return String.valueOf(p.getIntValue()); // Converte numero in stringa
+            } else {
+                return p.getText(); // Ritorna la stringa originale
+            }
+        }
+    }
     
 }
+

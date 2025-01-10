@@ -148,14 +148,14 @@ public class TSmodelSetup {
         espec.setTol(model.getEstimateTol());
         espec.setEML(model.isEstimateEml());
         try {
-            if (model.getEstimateFrom() != null && model.getEstimateTo() != null) {
+            if (model.getEstimateFrom() != null && model.getEstimateTo() != null && !"NA".equals(model.getEstimateFrom()) && !"NA".equals(model.getEstimateTo())) {
                 TsPeriodSelector period = new TsPeriodSelector();
                 Day from = Day.fromString(model.getEstimateFrom());
                 Day to = Day.fromString(model.getEstimateTo());
                 period.between(from, to);
                 period.excluding(model.getEstimateExclFirst(), model.getEstimateExclLast());
-                period.first(model.getEstimateFirst());
-                period.last(model.getEstimateLast());
+                period.first(Integer.parseInt(model.getEstimateFirst()));
+                period.last(Integer.parseInt(model.getEstimateLast()));
                 espec.setSpan(period);
             }
         } catch (Exception e) {
@@ -419,16 +419,17 @@ public class TSmodelSetup {
             o.setDeltaTC(model.getOutlierTcrate()); //Alessandro
             if (!model.isOutlierUsedefcv())
             {
-                if(model.getOutlierCv()!=0.0 && !("NA".equals(model.getOutlierCv())))
+                if(model.getOutlierCv()!=0.0 && !("NA".equals(model.getOutlierCv())) && model.getOutlierCv()<2)
                 {
                     o.setCriticalValue(model.getOutlierCv());
                 }
                 else
-                {   
+                { 
+                    o.setCriticalValue(3.5);
                 } 
             } else 
             {
-                // aggiungere logica per il calcolo del CV
+                // logica per il calcolo del CV
                 double CV;
                 if(model.getOutlierFrom()!=null && !model.getOutlierFrom().equals("NA"))
                 {
@@ -444,7 +445,12 @@ public class TSmodelSetup {
                    
                    int nPeriods=tsData.getEnd().minus(periodFrom);
                    CV = calculateCriticalValue(nPeriods);
-                } else
+                } 
+                else if(model.getOutlierLast()!= null && !"NA".equals(model.getOutlierLast()) && Integer.parseInt(model.getOutlierLast()) != 0)
+                {
+                    CV = calculateCriticalValue(Integer.parseInt(model.getOutlierLast()));
+                }    
+                else
                 {
                     int nObsTs= tsData.getObsCount();
                     CV = calculateCriticalValue(nObsTs);
@@ -493,8 +499,8 @@ public class TSmodelSetup {
                     Day to = Day.fromString(model.getOutlierTo());
                     period.between(from, to);
                     period.excluding(model.getOutlierExclFirst(), model.getOutlierExclLast());
-                    period.first(model.getOutlierFirst());
-                    period.last(model.getOutlierLast());
+                    period.first(Integer.parseInt(model.getOutlierFirst()));
+                    period.last(Integer.parseInt(model.getOutlierLast()));
                     o.setSpan(period);
                 }
             } catch (Exception e) {
