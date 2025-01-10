@@ -1,12 +1,13 @@
 package src;
 
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ec.satoolkit.algorithm.implementation.TramoSeatsProcessingFactory;
 import ec.satoolkit.tramoseats.TramoSeatsSpecification;
 import ec.tstoolkit.algorithm.CompositeResults;
 import ec.tstoolkit.algorithm.ProcessingContext;
+import ec.tstoolkit.jdr.ws.MultiProcessing;
+import ec.tstoolkit.jdr.ws.Workspace;
 import ec.tstoolkit.timeseries.simplets.TsData;
 import java.io.IOException;
 import java.text.ParseException;
@@ -21,28 +22,42 @@ import java.util.logging.Logger;
  */
 public class Main {
 
-        public static void main(String[] args) {
+    public static void main(String[] args) {
         try {
 
-            
             DataReaderCSV_IstatFormat reader = new DataReaderCSV_IstatFormat();
-            Map<String, TsData> tsDataMap = reader.readData("C:\\Users\\UTENTE\\Documents\\NetBeansProjects\\JD_JSON_processor\\src\\resources\\grezziFAT.csv");
-            String directoryPathExtReg    = "C:\\Users\\UTENTE\\Documents\\NetBeansProjects\\JD_JSON_processor\\src\\resources\\regr\\";
-            String filePath               = "C:\\Users\\UTENTE\\Documents\\NetBeansProjects\\JD_JSON_processor\\src\\resources\\specifications_new_full_FAT.txt"; 
+            String localpath = "C:\\Users\\UTENTE\\Documents\\NetBeansProjects3\\JD_JSON_processor_Java-main\\JD_JSON_processor_Java-main\\src\\resources";
+            //String localpath = "C:\\Users\\UTENTE\\Desktop\\resources";
+            //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\grezziFAT.csv");
+            Map<String, TsData> tsDataMap = reader.readData(localpath + "\\grezziTUR.csv");
+            //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\rawdata_db_istat_format.csv");
+            String directoryPathExtReg = localpath + "\\regr\\";
+            String filePath = localpath + "\\specifications_new_full_TUR.txt";
+            //String filePath = localpath + "\\specifications_db.txt";
             List<Map<String, Object>> jsonData = JsonReader.readJsonFile(filePath);
-            
-            
+
             // Esegui ulteriori operazioni sulla mappa tsDataMap
             //for (Map.Entry<String, TsData> entry : tsDataMap.entrySet()) {
             //    System.out.println("Serie: " + entry.getKey());
             //    System.out.println(entry.getValue());
             //}
-
-        
             // Print or use the data as you prefer
+            
+            
+            // We will use the library jdr-2.2.5.jar (see in https://github.com/nbbrd/jdemetra-sa-advanced for the last release of the library)
+            // That library is used in rjdemetra. It has been slightly modified (2.2.5) to be used in this code 
+            // We create a unique ProcessingContext for all the series
+            ProcessingContext context = new ProcessingContext();
+            
+            // Create the workspace with the context that will be filled in TSModelSetup
+            // (to be noted that we read only once each external file)
+            Workspace ws = new Workspace(context);
+            
+            // Create the multiplrocessing (with any name)
+            MultiProcessing mp = ws.newMultiProcessing("All");
+            
             for (Map<String, Object> data : jsonData) {
                 System.out.println("Series Name: " + data.get("series_name"));
-                
                 // Deserialization of JSON
                 ObjectMapper mapper = new ObjectMapper();
                 //ignore not predefined keys
@@ -52,27 +67,31 @@ public class Main {
                 //set empty strings to null
                 mapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
                 //create the object
-                DestSpecificationsModel model=mapper.readValue(mapper.writeValueAsString(data), DestSpecificationsModel.class);
-                TSmodelSetup tsModelSetup = new TSmodelSetup(model, directoryPathExtReg);
+                DestSpecificationsModel model = mapper.readValue(mapper.writeValueAsString(data), DestSpecificationsModel.class);
+                // The context is initialized in this function call
+                TSmodelSetup tsModelSetup = new TSmodelSetup(model, context, directoryPathExtReg, tsDataMap.get(data.get("series_name")));
                 TramoSeatsSpecification TRAMOSEATSspec = tsModelSetup.getTsSpec();
-                
-                
-                ProcessingContext context = tsModelSetup.getContext();
+
                 CompositeResults rslt = TramoSeatsProcessingFactory.process(tsDataMap.get(data.get("series_name")), TRAMOSEATSspec, context);
+               
                 TsData sa_data = rslt.getData("sa", TsData.class);
                 System.out.println(sa_data);
-                
+                 
+                // add in the multiprocessing each single processing
+                mp.add(data.get("series_name").toString(), sa_data, TRAMOSEATSspec);
+                                               
             }
-                  
-        } 
-        catch (IOException e) {
+
+            // Save the workspace (the output folder must exist)
+            // ws.save("C:\\Users\\UTENTE\\Documents\\NetBeansProjects3\\JD_JSON_processor_Java-main\\JD_JSON_processor_Java-main\\src\\resources\\workspace\\test.xml");
+            ws.save("C:\\Users\\UTENTE\\Desktop\\resources\\workspace\\test.xml");
+            
+        } catch (IOException e) {
             e.printStackTrace();
         } catch (ParseException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        
-        
     }
-    
+
 }

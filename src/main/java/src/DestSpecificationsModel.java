@@ -2,6 +2,13 @@ package src;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.io.IOException;
+import java.util.ArrayList;
 /*import ec.satoolkit.tramoseats.TramoSeatsSpecification;
 import ec.satoolkit.x13.X13Specification;
 import ec.satoolkit.seats.SeatsSpecification;
@@ -183,10 +190,19 @@ public class DestSpecificationsModel {
     private double seatsSeasdBoundary1;
     @JsonProperty("seats.seasTol")
     private double seatsSeasTol;
-    @JsonProperty("seats.maBoundary") //<<---- dove si setta?
+    @JsonProperty("seats.maBoundary") 
     private double seatsMaBoundary;
     @JsonProperty("seats.method")
     private String seatsMethod;
+    @JsonDeserialize(using = RampsInfoDeserializer.class) // per gestire ramps dal duplice valore: ramps="NA" o List<RampsInfo>
+    @JsonProperty("ramps") // nuovo
+    private List<RampsInfo> ramps;    
+    @JsonDeserialize(using = InterventionVariablesInfoDeserializer.class) // per gestire ramps dal duplice valore: ramps="NA" o List<RampsInfo>
+    @JsonProperty("intervention_variables") // nuovo
+    private List<InterventionVariablesInfo> interventionVariables;
+    @JsonProperty("easterCoef") // nuovo
+    private double easterCoef;
+
     
     @JsonCreator
     public DestSpecificationsModel(
@@ -1039,4 +1055,57 @@ public class DestSpecificationsModel {
         this.seatsMethod = seatsMethod;
     }
 
+    
+    // NUOVI DA QUI IN POI
+    
+    // per gestire ramps dal duplice valore: ramps="NA" o List<RampsInfo>
+    private static class RampsInfoDeserializer extends JsonDeserializer<List<RampsInfo>> {
+        @Override
+        public List<RampsInfo> deserialize(JsonParser parser, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            String text = parser.getText();
+            if ("NA".equalsIgnoreCase(text)) {
+                return new ArrayList<RampsInfo>();  // Restituisci null quando il valore è "NA"
+            }
+            return ctxt.readValue(parser, ctxt.getTypeFactory().constructCollectionType(List.class, RampsInfo.class));
+        }
+    }
+    
+    public List<RampsInfo> getRamps() {
+        return ramps;
+    }
+
+    public void setRamps(List<RampsInfo> ramps) {
+        this.ramps = ramps;
+    }
+    
+    
+    // per gestire IV dal duplice valore: ramps="NA" o List<InterventionVariablesInfo>
+    private static class InterventionVariablesInfoDeserializer extends JsonDeserializer<List<InterventionVariablesInfo>> {
+       @Override
+        public List<InterventionVariablesInfo> deserialize(JsonParser parser, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            String text = parser.getText();
+            if ("NA".equalsIgnoreCase(text)) {
+                return new ArrayList<InterventionVariablesInfo>();  // Restituisci null quando il valore è "NA"
+            }
+            return ctxt.readValue(parser, ctxt.getTypeFactory().constructCollectionType(List.class, InterventionVariablesInfo.class));
+        }
+    }
+    
+    public List<InterventionVariablesInfo> getInterventionVariables() {
+        return interventionVariables;
+    }
+
+    public void setInterventionVariables(List<InterventionVariablesInfo> interventionVariables) {
+        this.interventionVariables = interventionVariables;
+    }
+
+    public double getEasterCoef() {
+        return easterCoef;
+    }
+
+    public void setEasterCoef(double easterCoef) {
+        this.easterCoef = easterCoef;
+    }
+
+    
 }
