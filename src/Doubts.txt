@@ -1,0 +1,8 @@
+- 12 "sa" time series results null
+- UserDefinedVariables and TD: expand all the variables into a new map that replicates the variables that are 6 instead of 1 
+- Verify userDefined Variables and TradingDays (Done, R has problems in reading TD with fixed coefficients --> Use UserDefinedVariables instead of TD variables)
+- Debugging the number of outliers for each series (I see a suspect size 91 in the debugger).
+- External variables do not read by Java (?).
+- Set the coefficients both for Trading days and user defined variables according to "usrdef.varCoef" of the JSON (only if "transform.function" field is not "Auto")
+- usrDefVariables check if it is possible to assign them to "Trend", "Seasonal", ecc...
+- see the DataReaderExtReg of R to see how to set the userDefinedCoefficients (something like TramoSeatsSpec.getCore().getTramoSpecification().getRegression()... instead of TramoSeatsSpec.getRegression(). This is useful also for assignment to Trend, Seasonal, ...) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DONE BUT I DON'T KNOW IF WORKING
