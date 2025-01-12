@@ -18,6 +18,7 @@ import ec.tstoolkit.modelling.arima.tramo.TransformSpec;
 import ec.tstoolkit.sarima.SarimaModel;
 import ec.tstoolkit.sarima.SarmaSpecification;
 import ec.tstoolkit.timeseries.Day;
+import ec.tstoolkit.timeseries.PeriodSelectorType;
 import ec.tstoolkit.timeseries.TsPeriodSelector;
 import ec.tstoolkit.timeseries.calendars.TradingDaysType;
 import ec.tstoolkit.timeseries.regression.InterventionVariable;
@@ -147,19 +148,106 @@ public class TSmodelSetup {
         espec.setUbp(model.getEstimateUrfinal()); // Alessandro
         espec.setTol(model.getEstimateTol());
         espec.setEML(model.isEstimateEml());
-        try {
-            if (model.getEstimateFrom() != null && model.getEstimateTo() != null && !"NA".equals(model.getEstimateFrom()) && !"NA".equals(model.getEstimateTo())) {
-                TsPeriodSelector period = new TsPeriodSelector();
-                Day from = Day.fromString(model.getEstimateFrom());
-                Day to = Day.fromString(model.getEstimateTo());
-                period.between(from, to);
-                period.excluding(model.getEstimateExclFirst(), model.getEstimateExclLast());
-                period.first(Integer.parseInt(model.getEstimateFirst()));
-                period.last(Integer.parseInt(model.getEstimateLast()));
-                espec.setSpan(period);
+//        try {
+//            if (model.getEstimateFrom() != null && model.getEstimateTo() != null && !"NA".equals(model.getEstimateFrom()) && !"NA".equals(model.getEstimateTo())) {
+//                TsPeriodSelector period = new TsPeriodSelector();
+//                Day from = Day.fromString(model.getEstimateFrom());
+//                Day to = Day.fromString(model.getEstimateTo());
+//                period.between(from, to);
+//                period.excluding(model.getEstimateExclFirst(), model.getEstimateExclLast());
+//                period.first(Integer.parseInt(model.getEstimateFirst()));
+//                period.last(Integer.parseInt(model.getEstimateLast()));
+//                espec.setSpan(period);
+//            }
+//        } catch (Exception e) {
+//        }
+
+          try
+          {
+                TsPeriodSelector estimatePeriod = new TsPeriodSelector();
+                Day from=null, to=null;
+                
+                Day tsBegin = tsData.getStart().firstday();
+                Day tsEnd   = tsData.getLastPeriod().lastday();
+                
+                boolean estimateFromPresent   = model.getEstimateFrom() != null && !"NA".equals(model.getEstimateFrom());
+                boolean estimateToPresent     = model.getEstimateTo()   != null && !"NA".equals(model.getEstimateTo());
+                boolean estimateFirstPresent  = model.getEstimateFirst()!=null  && !"NA".equals(model.getEstimateFirst());
+                boolean estimateLastPresent   = model.getEstimateLast() !=null  && !"NA".equals(model.getEstimateLast());
+                boolean estimateExcludeFirstNpresent = model.getEstimateExclFirst() != 0;
+                boolean estimateExcludeLastNpresent  = model.getEstimateExclLast()  != 0;
+                
+                //boolean estimatefromToPresent    = estimateFromPresent  || estimateToPresent; //from and to set by default
+                boolean estimateFirstLastPresent = estimateFirstPresent || estimateLastPresent;
+                boolean estimateExcludePresent   = estimateExcludeFirstNpresent || estimateExcludeLastNpresent;
+                
+                if(estimateFromPresent)
+                {
+                    from    = Day.fromString(model.getEstimateFrom());
+                } else
+                {
+                    from    = tsBegin;
+                }    
+                    
+                if(estimateToPresent)
+                {
+                    to = Day.fromString(model.getEstimateTo());
+                } else
+                {
+                    to = tsEnd;
+                }
+                estimatePeriod.between(from, to);
+
+                if(estimateFirstLastPresent)
+                {
+                    if(estimateFirstPresent && estimateLastPresent) // precedence to first, decided by me
+                    {
+                        //period.first(Integer.parseInt(model.getOutlierFirst()));
+                        estimatePeriod.between(from, from.plus(Integer.parseInt(model.getEstimateFirst())));
+                        
+                    } else if(estimateFirstPresent && !estimateLastPresent)
+                    {
+                        //period.first(Integer.parseInt(model.getOutlierFirst()));
+                        estimatePeriod.between(from, from.plus(Integer.parseInt(model.getEstimateFirst())));
+                    } else if(!estimateFirstPresent && estimateLastPresent)   
+                    {
+                        //period.last(Integer.parseInt(model.getOutlierLast()));
+                        estimatePeriod.between(to.minus(Integer.parseInt(model.getEstimateLast())), to);
+                    }
+                         
+                } else if(estimateExcludePresent)
+                {
+                    if(estimateExcludeFirstNpresent && estimateExcludeLastNpresent)
+                    {
+                        //period.excluding(model.getOutlierExclFirst(), model.getOutlierExclLast());
+                        estimatePeriod.between(from.plus(model.getEstimateExclFirst()), to.minus(model.getEstimateExclLast()));
+                    } else if(estimateExcludeFirstNpresent && !estimateExcludeLastNpresent)
+                    {
+                        //period.excluding(model.getOutlierExclFirst(), 0);
+                        estimatePeriod.between(from.plus(model.getEstimateExclFirst()), to);
+
+                    } else if(!estimateExcludeFirstNpresent && estimateExcludeLastNpresent)   
+                    {
+                        //period.excluding(0, model.getOutlierExclLast());
+                        estimatePeriod.between(from, to.minus(model.getEstimateExclLast()));
+                    }
+                } else
+                {
+                    if(from.equals(tsBegin) && to.equals(tsEnd))
+                    {
+                        estimatePeriod.setType(PeriodSelectorType.All);
+                    }    
+                }  
+                      
+                espec.setSpan(estimatePeriod);
+                
+            } catch (NumberFormatException | ParseException e) {
+                System.out.println("Problem in SetOutlier function");
             }
-        } catch (Exception e) {
-        }
+
+
+
+
     }
 
     private void setTradingDays(String directoryPathExtReg) {
@@ -382,6 +470,12 @@ public class TSmodelSetup {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date date;
         String type;
+        
+//        Day tsBegin = tsData.getStart().firstday();
+//        Day tsEnd   = tsData.getLastPeriod().lastday();
+          
+        Day tsBeginEstimate = tsSpec.getTramoSpecification().getEstimate().getSpan().getD0();
+        Day tsEndEstimate   = tsSpec.getTramoSpecification().getEstimate().getSpan().getD1();
 
         if (!(model.getUsrdefOutliersDate().size() == model.getUsrdefOutliersType().size())) {
             System.out.println("Number of userDefined outliers dates is different from the number of outlierTypes");
@@ -411,15 +505,92 @@ public class TSmodelSetup {
                 o = new OutlierSpec();
                 tsSpec.getTramoSpecification().setOutliers(o);
             }
+            
+            try
+            {
+                TsPeriodSelector outlierPeriod = new TsPeriodSelector();
+                Day from=null, to=null;
+                
+                boolean outlierFromPresent   = model.getOutlierFrom() != null && !"NA".equals(model.getOutlierFrom());
+                boolean outlierToPresent     = model.getOutlierTo()   != null && !"NA".equals(model.getOutlierTo());
+                boolean outlierFirstPresent  = model.getOutlierFirst()!=null  && !"NA".equals(model.getOutlierFirst());
+                boolean outlierLastPresent   = model.getOutlierLast() !=null  && !"NA".equals(model.getOutlierLast());
+                boolean outlierExcludeFirstNpresent = model.getOutlierExclFirst() != 0;
+                boolean outlierExcludeLastNpresent  = model.getOutlierExclLast()  != 0;
+                
+                //boolean outlierfromToPresent    = outlierFromPresent  || outlierToPresent; //from and to set by default
+                boolean outlierFirstLastPresent = outlierFirstPresent || outlierLastPresent;
+                boolean outlierExcludePresent   = outlierExcludeFirstNpresent || outlierExcludeLastNpresent;
+                
+                if(outlierFromPresent)
+                {
+                    from    = Day.fromString(model.getOutlierFrom());
+                } else
+                {
+                    from    = tsBeginEstimate;
+                }    
+                    
+                if(outlierToPresent)
+                {
+                    to = Day.fromString(model.getOutlierTo());
+                } else
+                {
+                    to = tsEndEstimate;
+                }
+                outlierPeriod.between(from, to);
+
+                if(outlierFirstLastPresent)
+                {
+                    if(outlierFirstPresent && outlierLastPresent) // precedence to first, decided by me
+                    {
+                        //period.first(Integer.parseInt(model.getOutlierFirst()));
+                        outlierPeriod.between(from, from.plus(Integer.parseInt(model.getOutlierFirst())));
+                        
+                    } else if(outlierFirstPresent && !outlierLastPresent)
+                    {
+                        //period.first(Integer.parseInt(model.getOutlierFirst()));
+                        outlierPeriod.between(from, from.plus(Integer.parseInt(model.getOutlierFirst())));
+                    } else if(!outlierFirstPresent && outlierLastPresent)   
+                    {
+                        //period.last(Integer.parseInt(model.getOutlierLast()));
+                        outlierPeriod.between(to.minus(Integer.parseInt(model.getOutlierLast())), to);
+                    }
+                         
+                } else if(outlierExcludePresent)
+                {
+                    if(outlierExcludeFirstNpresent && outlierExcludeLastNpresent)
+                    {
+                        //period.excluding(model.getOutlierExclFirst(), model.getOutlierExclLast());
+                        outlierPeriod.between(from.plus(model.getOutlierExclFirst()), to.minus(model.getOutlierExclLast()));
+                    } else if(outlierExcludeFirstNpresent && !outlierExcludeLastNpresent)
+                    {
+                        //period.excluding(model.getOutlierExclFirst(), 0);
+                        outlierPeriod.between(from.plus(model.getOutlierExclFirst()), to);
+
+                    } else if(!outlierExcludeFirstNpresent && outlierExcludeLastNpresent)   
+                    {
+                        //period.excluding(0, model.getOutlierExclLast());
+                        outlierPeriod.between(from, to.minus(model.getOutlierExclLast()));
+                    }
+                }   
+                      
+                o.setSpan(outlierPeriod);
+                
+            } catch (NumberFormatException | ParseException e) {
+                System.out.println("Problem in SetOutlier function");
+            }
+                 
+            
             /*
     "outlier.tcrate":0.7
     "outlier.usedefcv":true/false
              */
             //Alessandro's block
             o.setDeltaTC(model.getOutlierTcrate()); //Alessandro
+            
             if (!model.isOutlierUsedefcv())
             {
-                if(model.getOutlierCv()!=0.0 && !("NA".equals(model.getOutlierCv())) && model.getOutlierCv()<2)
+                if(model.getOutlierCv()!=0.0 && model.getOutlierCv()>=2) //&& !("NA".equals(model.getOutlierCv()))
                 {
                     o.setCriticalValue(model.getOutlierCv());
                 }
@@ -431,30 +602,39 @@ public class TSmodelSetup {
             {
                 // logica per il calcolo del CV
                 double CV;
-                if(model.getOutlierFrom()!=null && !model.getOutlierFrom().equals("NA"))
-                {
-                   SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");        
-                   Date date_from=new Date();
-                    try {
-                        date_from = simpleDateFormat.parse(model.getOutlierFrom());
-                    } catch (ParseException ex) {
-                        Logger.getLogger(TSmodelSetup.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                   
-                   TsPeriod periodFrom = new TsPeriod(tsData.getFrequency(), date_from);
-                   
-                   int nPeriods=tsData.getEnd().minus(periodFrom);
-                   CV = calculateCriticalValue(nPeriods);
-                } 
-                else if(model.getOutlierLast()!= null && !"NA".equals(model.getOutlierLast()) && Integer.parseInt(model.getOutlierLast()) != 0)
-                {
-                    CV = calculateCriticalValue(Integer.parseInt(model.getOutlierLast()));
-                }    
-                else
-                {
-                    int nObsTs= tsData.getObsCount();
-                    CV = calculateCriticalValue(nObsTs);
-                }    
+                
+                TsPeriodSelector span = o.getSpan();
+                
+                TsPeriod startPeriod = new TsPeriod(tsData.getFrequency(), span.getD0());
+                TsPeriod endPeriod   = new TsPeriod(tsData.getFrequency(), span.getD1());
+
+                int nObsB = endPeriod.minus(startPeriod);
+                CV = calculateCriticalValue(nObsB);
+                
+//                if(model.getOutlierFrom()!=null && !model.getOutlierFrom().equals("NA"))
+//                {
+//                   SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");        
+//                   Date date_from=new Date();
+//                    try {
+//                        date_from = simpleDateFormat.parse(model.getOutlierFrom());
+//                    } catch (ParseException ex) {
+//                        Logger.getLogger(TSmodelSetup.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
+//                   
+//                   TsPeriod periodFrom = new TsPeriod(tsData.getFrequency(), date_from);
+//                   
+//                   int nPeriods=tsData.getEnd().minus(periodFrom);
+//                   CV = calculateCriticalValue(nPeriods);
+//                } 
+//                else if(model.getOutlierLast()!= null && !"NA".equals(model.getOutlierLast()) && Integer.parseInt(model.getOutlierLast()) != 0)
+//                {
+//                    CV = calculateCriticalValue(Integer.parseInt(model.getOutlierLast()));
+//                }    
+//                else
+//                {
+//                    int nObsTs= tsData.getObsCount();
+//                    CV = calculateCriticalValue(nObsTs);
+//                }    
                 
 
                 o.setCriticalValue(CV);
@@ -491,21 +671,6 @@ public class TSmodelSetup {
             // end Alessandro's block
             o.setEML(model.isOutlierEml());
             //o.setCriticalValue(model.getOutlierCv()); //placed before into if that controls if it should be read
-
-            try {
-                if (model.getOutlierFrom() != null && model.getOutlierTo() != null) {
-                    TsPeriodSelector period = new TsPeriodSelector();
-                    Day from = Day.fromString(model.getOutlierFrom());
-                    Day to = Day.fromString(model.getOutlierTo());
-                    period.between(from, to);
-                    period.excluding(model.getOutlierExclFirst(), model.getOutlierExclLast());
-                    period.first(Integer.parseInt(model.getOutlierFirst()));
-                    period.last(Integer.parseInt(model.getOutlierLast()));
-                    o.setSpan(period);
-                }
-            } catch (Exception e) {
-                System.out.println("Problem in SetOutlier function");
-            }
         }
     }
 

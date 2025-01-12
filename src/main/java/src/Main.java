@@ -30,7 +30,7 @@ public class Main {
             //String localpath = "C:\\Users\\UTENTE\\Desktop\\resources";
             //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\grezziFAT.csv");
             Map<String, TsData> tsDataMap = reader.readData(localpath + "\\grezziTUR.csv");
-            //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\rawdata_db_istat_format.csv");
+            //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\rawdata_db_istat_format.csv");           
             String directoryPathExtReg = localpath + "\\regr\\";
             String filePath = localpath + "\\specifications_new_full_TUR.txt";
             //String filePath = localpath + "\\specifications_db.txt";
