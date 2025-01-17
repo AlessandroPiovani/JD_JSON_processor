@@ -57,8 +57,8 @@ public class TSmodelSetup {
 
     public static final String EXTERNAL = "external";
     private final DestSpecificationsModel model;
-    private final TramoSeatsSpecification tsSpec;
-    private final ProcessingContext context; // Alessandro    
+    private final ProcessingContext context; // Alessandro  
+    private TramoSeatsSpecification tsSpec; // TOLTO FINAL
     private String[] tdVarNames     = {}; //added
     private String[] usrDefVarNames = {}; //added
     private TsData tsData; //added
@@ -107,6 +107,7 @@ public class TSmodelSetup {
     }
 
     private void setupTSmodel(String directoryPathExtReg) {
+        //setBasicSpec();
         setTransform();
         setEstimate();
         setTradingDays(directoryPathExtReg);
@@ -125,6 +126,14 @@ public class TSmodelSetup {
         fixDefaultJDplusCalendarCoefficients(); //Easter, JD+ automatic TDs and Leap Year
     }
 
+    private void setBasicSpec() {
+        
+        this.tsSpec = this.tsSpec.fromString(this.model.getSpec()).clone();
+    }
+    
+    
+    
+    
     private void setTransform() {
         TransformSpec tf = tsSpec.getTramoSpecification().getTransform();
         if (tf == null) {
@@ -610,6 +619,8 @@ public class TSmodelSetup {
 
                 int nObsB = endPeriod.minus(startPeriod);
                 CV = calculateCriticalValue(nObsB);
+                //CV = 3.5;
+                //CV = 4;
                 
 //                if(model.getOutlierFrom()!=null && !model.getOutlierFrom().equals("NA"))
 //                {
@@ -1322,6 +1333,7 @@ public class TSmodelSetup {
 
     public static double calculateCriticalValue(int numberOfObservations)
     {
+     
         if (numberOfObservations <= 50) {
             return 3.0;
         } else if (numberOfObservations >= 450) {
@@ -1329,6 +1341,11 @@ public class TSmodelSetup {
         } else {
             return 3.0 + 0.0025 * (numberOfObservations - 50);
         }
+        /* one piece is missing: if LB is NOT significant, 
+        * CV = (1- this.model.getReduceCV()) * CV 
+        * it is needed to run the processing 2 times: one to compute the LB and one
+        * to adjust CV
+        */
     }
-    
+
 }

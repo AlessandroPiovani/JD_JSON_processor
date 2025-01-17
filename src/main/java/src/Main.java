@@ -29,9 +29,12 @@ public class Main {
             String localpath = "C:\\Users\\UTENTE\\Documents\\NetBeansProjects3\\JD_JSON_processor_Java-main\\JD_JSON_processor_Java-main\\src\\resources";
             //String localpath = "C:\\Users\\UTENTE\\Desktop\\resources";
             //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\grezziFAT.csv");
+            
             Map<String, TsData> tsDataMap = reader.readData(localpath + "\\grezziTUR.csv");
+            
             //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\rawdata_db_istat_format.csv");           
             String directoryPathExtReg = localpath + "\\regr\\";
+
             String filePath = localpath + "\\specifications_new_full_TUR.txt";
             //String filePath = localpath + "\\specifications_db.txt";
             List<Map<String, Object>> jsonData = JsonReader.readJsonFile(filePath);
@@ -56,8 +59,10 @@ public class Main {
             // Create the multiplrocessing (with any name)
             MultiProcessing mp = ws.newMultiProcessing("All");
             
+            String seriesName=null;
             for (Map<String, Object> data : jsonData) {
-                System.out.println("Series Name: " + data.get("series_name"));
+                seriesName = data.get("series_name").toString();
+                System.out.println("Series Name: " + seriesName);
                 // Deserialization of JSON
                 ObjectMapper mapper = new ObjectMapper();
                 //ignore not predefined keys
@@ -72,19 +77,23 @@ public class Main {
                 TSmodelSetup tsModelSetup = new TSmodelSetup(model, context, directoryPathExtReg, tsDataMap.get(data.get("series_name")));
                 TramoSeatsSpecification TRAMOSEATSspec = tsModelSetup.getTsSpec();
 
-                CompositeResults rslt = TramoSeatsProcessingFactory.process(tsDataMap.get(data.get("series_name")), TRAMOSEATSspec, context);
+                CompositeResults rslt = TramoSeatsProcessingFactory.process(tsDataMap.get(seriesName), TRAMOSEATSspec, context);
                
                 TsData sa_data = rslt.getData("sa", TsData.class);
                 System.out.println(sa_data);
                  
                 // add in the multiprocessing each single processing
-                mp.add(data.get("series_name").toString(), sa_data, TRAMOSEATSspec);
+                mp.add(seriesName, tsDataMap.get(seriesName) , TRAMOSEATSspec);
                                                
             }
 
             // Save the workspace (the output folder must exist)
             // ws.save("C:\\Users\\UTENTE\\Documents\\NetBeansProjects3\\JD_JSON_processor_Java-main\\JD_JSON_processor_Java-main\\src\\resources\\workspace\\test.xml");
-            ws.save("C:\\Users\\UTENTE\\Desktop\\resources\\workspace\\test.xml");
+            boolean ret=ws.save("C:\\Users\\UTENTE\\Desktop\\resources\\workspace\\test.xml");
+            if(ret)
+            {System.out.println("WS SAVED");}
+            else
+            {System.out.println("ERROR IN SAVING WS");}    
             
         } catch (IOException e) {
             e.printStackTrace();
