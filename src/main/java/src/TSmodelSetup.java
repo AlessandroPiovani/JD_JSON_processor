@@ -15,8 +15,6 @@ import ec.tstoolkit.modelling.arima.tramo.OutlierSpec;
 import ec.tstoolkit.modelling.arima.tramo.RegressionSpec;
 import ec.tstoolkit.modelling.arima.tramo.TradingDaysSpec;
 import ec.tstoolkit.modelling.arima.tramo.TransformSpec;
-import ec.tstoolkit.sarima.SarimaModel;
-import ec.tstoolkit.sarima.SarmaSpecification;
 import ec.tstoolkit.timeseries.Day;
 import ec.tstoolkit.timeseries.PeriodSelectorType;
 import ec.tstoolkit.timeseries.TsPeriodSelector;
@@ -25,7 +23,6 @@ import ec.tstoolkit.timeseries.regression.InterventionVariable;
 import ec.tstoolkit.timeseries.regression.OutlierDefinition;
 import ec.tstoolkit.timeseries.regression.OutlierType;
 import ec.tstoolkit.timeseries.regression.Ramp;
-//import ec.tstoolkit.timeseries.regression.Sequence;
 import ec.tstoolkit.timeseries.regression.TsVariable;
 import ec.tstoolkit.timeseries.regression.TsVariables;
 import ec.tstoolkit.timeseries.simplets.TsData;
@@ -52,18 +49,18 @@ import static src.ArimaSplitter.splitArimaCoefficients;
 /**
  *
  * @author cazora apiovani
+ * alessandro.piovani@istat.it
  */
 public class TSmodelSetup {
 
     public static final String EXTERNAL = "external";
     private final DestSpecificationsModel model;
     private final ProcessingContext context; // Alessandro  
-    private TramoSeatsSpecification tsSpec; // TOLTO FINAL
+    private final TramoSeatsSpecification tsSpec; // TOLTO FINAL
     private String[] tdVarNames     = {}; //added
     private String[] usrDefVarNames = {}; //added
     private TsData tsData; //added
-
-    //added
+    
     public TsData getTsData() {
         return tsData;
     }
@@ -84,7 +81,7 @@ public class TSmodelSetup {
     public TramoSeatsSpecification getTsSpec() {
         return tsSpec;
     }
-
+     
     public TSmodelSetup(DestSpecificationsModel model, ProcessingContext context, String directoryPathExtReg, TsData tsData) {
         this.model = model;
         this.context = context;
@@ -106,8 +103,15 @@ public class TSmodelSetup {
 
     }
 
+//    public TSmodelSetup(DestSpecificationsModel model, ProcessingContext context, String directoryPathExtReg, TsData tsData, Double oldCV) {
+//        this(model, context, directoryPathExtReg, tsData);
+//     
+//        adjustOutliersCV(oldCV);
+//
+//    }
+    
+    
     private void setupTSmodel(String directoryPathExtReg) {
-        //setBasicSpec();
         setTransform();
         setEstimate();
         setTradingDays(directoryPathExtReg);
@@ -126,12 +130,8 @@ public class TSmodelSetup {
         fixDefaultJDplusCalendarCoefficients(); //Easter, JD+ automatic TDs and Leap Year
     }
 
-    private void setBasicSpec() {
-        
-        this.tsSpec = this.tsSpec.fromString(this.model.getSpec()).clone();
-    }
-    
-    
+   
+   
     
     
     private void setTransform() {
@@ -157,70 +157,55 @@ public class TSmodelSetup {
         espec.setUbp(model.getEstimateUrfinal()); // Alessandro
         espec.setTol(model.getEstimateTol());
         espec.setEML(model.isEstimateEml());
-//        try {
-//            if (model.getEstimateFrom() != null && model.getEstimateTo() != null && !"NA".equals(model.getEstimateFrom()) && !"NA".equals(model.getEstimateTo())) {
-//                TsPeriodSelector period = new TsPeriodSelector();
-//                Day from = Day.fromString(model.getEstimateFrom());
-//                Day to = Day.fromString(model.getEstimateTo());
-//                period.between(from, to);
-//                period.excluding(model.getEstimateExclFirst(), model.getEstimateExclLast());
-//                period.first(Integer.parseInt(model.getEstimateFirst()));
-//                period.last(Integer.parseInt(model.getEstimateLast()));
-//                espec.setSpan(period);
-//            }
-//        } catch (Exception e) {
-//        }
 
-          try
-          {
-                TsPeriodSelector estimatePeriod = new TsPeriodSelector();
-                Day from=null, to=null;
+
+        try
+        {
+            TsPeriodSelector estimatePeriod = new TsPeriodSelector();
+            Day from=null, to=null;
                 
-                Day tsBegin = tsData.getStart().firstday();
-                Day tsEnd   = tsData.getLastPeriod().lastday();
+            Day tsBegin = tsData.getStart().firstday();
+            Day tsEnd   = tsData.getLastPeriod().lastday();
                 
-                boolean estimateFromPresent   = model.getEstimateFrom() != null && !"NA".equals(model.getEstimateFrom());
-                boolean estimateToPresent     = model.getEstimateTo()   != null && !"NA".equals(model.getEstimateTo());
-                boolean estimateFirstPresent  = model.getEstimateFirst()!=null  && !"NA".equals(model.getEstimateFirst());
-                boolean estimateLastPresent   = model.getEstimateLast() !=null  && !"NA".equals(model.getEstimateLast());
-                boolean estimateExcludeFirstNpresent = model.getEstimateExclFirst() != 0;
-                boolean estimateExcludeLastNpresent  = model.getEstimateExclLast()  != 0;
+            boolean estimateFromPresent   = model.getEstimateFrom() != null && !"NA".equals(model.getEstimateFrom());
+            boolean estimateToPresent     = model.getEstimateTo()   != null && !"NA".equals(model.getEstimateTo());
+            boolean estimateFirstPresent  = model.getEstimateFirst()!=null  && !"NA".equals(model.getEstimateFirst());
+            boolean estimateLastPresent   = model.getEstimateLast() !=null  && !"NA".equals(model.getEstimateLast());
+            boolean estimateExcludeFirstNpresent = model.getEstimateExclFirst() != 0;
+            boolean estimateExcludeLastNpresent  = model.getEstimateExclLast()  != 0;
                 
-                //boolean estimatefromToPresent    = estimateFromPresent  || estimateToPresent; //from and to set by default
-                boolean estimateFirstLastPresent = estimateFirstPresent || estimateLastPresent;
-                boolean estimateExcludePresent   = estimateExcludeFirstNpresent || estimateExcludeLastNpresent;
-                
-                if(estimateFromPresent)
-                {
-                    from    = Day.fromString(model.getEstimateFrom());
-                } else
-                {
-                    from    = tsBegin;
-                }    
+            //boolean estimatefromToPresent    = estimateFromPresent  || estimateToPresent; //from and to set by default
+            boolean estimateFirstLastPresent = estimateFirstPresent || estimateLastPresent;
+            boolean estimateExcludePresent   = estimateExcludeFirstNpresent || estimateExcludeLastNpresent;
+            
+            if(estimateFromPresent)
+            {
+                from    = Day.fromString(model.getEstimateFrom());
+            } else
+            {
+                from    = tsBegin;
+            }    
                     
-                if(estimateToPresent)
-                {
-                    to = Day.fromString(model.getEstimateTo());
-                } else
-                {
-                    to = tsEnd;
-                }
-                estimatePeriod.between(from, to);
+            if(estimateToPresent)
+            {
+                to = Day.fromString(model.getEstimateTo());
+            } else
+            {
+                to = tsEnd;
+            }
+            estimatePeriod.between(from, to);
 
-                if(estimateFirstLastPresent)
+            if(estimateFirstLastPresent)
+            {
+                if(estimateFirstPresent && estimateLastPresent) // precedence to first, decided by me
                 {
-                    if(estimateFirstPresent && estimateLastPresent) // precedence to first, decided by me
-                    {
-                        //period.first(Integer.parseInt(model.getOutlierFirst()));
-                        estimatePeriod.between(from, from.plus(Integer.parseInt(model.getEstimateFirst())));
+                    estimatePeriod.between(from, from.plus(Integer.parseInt(model.getEstimateFirst())));
                         
                     } else if(estimateFirstPresent && !estimateLastPresent)
                     {
-                        //period.first(Integer.parseInt(model.getOutlierFirst()));
                         estimatePeriod.between(from, from.plus(Integer.parseInt(model.getEstimateFirst())));
                     } else if(!estimateFirstPresent && estimateLastPresent)   
                     {
-                        //period.last(Integer.parseInt(model.getOutlierLast()));
                         estimatePeriod.between(to.minus(Integer.parseInt(model.getEstimateLast())), to);
                     }
                          
@@ -228,16 +213,13 @@ public class TSmodelSetup {
                 {
                     if(estimateExcludeFirstNpresent && estimateExcludeLastNpresent)
                     {
-                        //period.excluding(model.getOutlierExclFirst(), model.getOutlierExclLast());
                         estimatePeriod.between(from.plus(model.getEstimateExclFirst()), to.minus(model.getEstimateExclLast()));
                     } else if(estimateExcludeFirstNpresent && !estimateExcludeLastNpresent)
                     {
-                        //period.excluding(model.getOutlierExclFirst(), 0);
                         estimatePeriod.between(from.plus(model.getEstimateExclFirst()), to);
 
                     } else if(!estimateExcludeFirstNpresent && estimateExcludeLastNpresent)   
                     {
-                        //period.excluding(0, model.getOutlierExclLast());
                         estimatePeriod.between(from, to.minus(model.getEstimateExclLast()));
                     }
                 } else
@@ -266,14 +248,7 @@ public class TSmodelSetup {
             tdspec = new TradingDaysSpec();
             tsSpec.getTramoSpecification().getRegression().getCalendar().setTradingDays(tdspec);
         }
-        /*
-    "tradingdays.option":"None",
-         */
-        //Alessandro
-//        if(model.getSeriesName().equals("VATASA") || model.getSeriesName().equals("C_DEFL") || model.getSeriesName().equals("FATEXP_14"))
-//        {
-//            System.out.println("debug");
-//        }    
+        
         if (!isNull(model.getTradingdaysOption())) {
             if (model.getTradingdaysOption().equals("TradingDays")) {
                 tdspec.setTradingDaysType(TradingDaysType.TradingDays);
@@ -289,7 +264,6 @@ public class TSmodelSetup {
                 for (DestSpecVarFromFileInfo usrDefVar : userDefVarFileInfoList) {
                     if (usrdefVarTypes.get(idxUsrDefVarTypes).equals("Calendar")) 
                     {
-//                        List<String> varNames = new ArrayList<>(); // BEFORE
                         Map<String, TsData> usrDefVariables;
                         String varNameForDescriptor = usrDefVar.getContainer().substring(0, usrDefVar.getContainer().lastIndexOf('.')); 
                         if (!vars.contains(varNameForDescriptor) && !vars.contains(varNameForDescriptor + "_1"))
@@ -308,9 +282,8 @@ public class TSmodelSetup {
                                 for (Map.Entry<String, TsData> variable : usrDefVariables.entrySet()) {
                                     String key = variable.getKey();
                                     TsData value = variable.getValue();
-                                    TsVariable var = new TsVariable(key, value); // KEY AS A DESK FUNDAMENTAL TO PLOT THE NAME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                    var.setName(key); //asd
-                                    //var.setName( EXTERNAL + '.' + key);
+                                    TsVariable var = new TsVariable(key, value); // KEY AS A DESC IS FUNDAMENTAL TO PLOT THE NAME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                    var.setName(key); 
                                     vars.set(key, var);
                                     varNames.add(key);
                                     
@@ -330,8 +303,6 @@ public class TSmodelSetup {
                                 varNames.add(builder.toString());
                             }
                         }
-                        // BEFORE
-                        //String[] vDescStr = varNames.toArray(String[]::new); // without EXTERNAL prefix the variable is not valid
                         String[] vDescStr = varNames.stream().map(name -> EXTERNAL + '.' +name).toArray(String[]::new);
                         tdspec.setUserVariables(vDescStr);
                         
@@ -339,9 +310,7 @@ public class TSmodelSetup {
                     }
                     idxUsrDefVarTypes++;
                 }
-                //AFTER
-//                String[] vDescStr = varNames.stream().map(name -> EXTERNAL + '.' + name).toArray(String[]::new);                
-//                tdspec.setUserVariables(vDescStr);
+
             } else {
                 if (!model.getTradingdaysOption().equals("None") && !model.getTradingdaysOption().equals("NA")) {
                     System.out.println("tradingdays.option field has an unknown value");
@@ -353,7 +322,6 @@ public class TSmodelSetup {
             }
 
         }
-        // end Alessandro's part
 
         tdspec.setAutomaticMethod(TradingDaysSpec.AutoMethod.valueOf(model.getTradingdaysMauto()));
         tdspec.setProbabibilityForFTest(model.getTradingdaysPftd());
@@ -365,7 +333,6 @@ public class TSmodelSetup {
         tdspec.setTest(model.isTradingdaysTest());
     }
 
-    // "Added by Alessandro" block Begin
     private void setUserDefinedVariables(String directoryPathExtReg)
     {
         RegressionSpec regSpec = tsSpec.getTramoSpecification().getRegression();
@@ -415,7 +382,6 @@ public class TSmodelSetup {
                 }
 
                 TsVariables vars = new TsVariables();
-                //List<TsVariableDescriptor> varsDescriptor = new ArrayList<TsVariableDescriptor>();
                 String varNameForDescriptor = usrDefVar.getContainer().substring(0, usrDefVar.getContainer().lastIndexOf('.'));
                 List<String> varNames = new ArrayList<String>();
 
@@ -480,9 +446,7 @@ public class TSmodelSetup {
         Date date;
         String type;
         
-//        Day tsBegin = tsData.getStart().firstday();
-//        Day tsEnd   = tsData.getLastPeriod().lastday();
-          
+         
         Day tsBeginEstimate = tsSpec.getTramoSpecification().getEstimate().getSpan().getD0();
         Day tsEndEstimate   = tsSpec.getTramoSpecification().getEstimate().getSpan().getD1();
 
@@ -552,16 +516,13 @@ public class TSmodelSetup {
                 {
                     if(outlierFirstPresent && outlierLastPresent) // precedence to first, decided by me
                     {
-                        //period.first(Integer.parseInt(model.getOutlierFirst()));
                         outlierPeriod.between(from, from.plus(Integer.parseInt(model.getOutlierFirst())));
                         
                     } else if(outlierFirstPresent && !outlierLastPresent)
                     {
-                        //period.first(Integer.parseInt(model.getOutlierFirst()));
                         outlierPeriod.between(from, from.plus(Integer.parseInt(model.getOutlierFirst())));
                     } else if(!outlierFirstPresent && outlierLastPresent)   
                     {
-                        //period.last(Integer.parseInt(model.getOutlierLast()));
                         outlierPeriod.between(to.minus(Integer.parseInt(model.getOutlierLast())), to);
                     }
                          
@@ -569,16 +530,13 @@ public class TSmodelSetup {
                 {
                     if(outlierExcludeFirstNpresent && outlierExcludeLastNpresent)
                     {
-                        //period.excluding(model.getOutlierExclFirst(), model.getOutlierExclLast());
                         outlierPeriod.between(from.plus(model.getOutlierExclFirst()), to.minus(model.getOutlierExclLast()));
                     } else if(outlierExcludeFirstNpresent && !outlierExcludeLastNpresent)
                     {
-                        //period.excluding(model.getOutlierExclFirst(), 0);
                         outlierPeriod.between(from.plus(model.getOutlierExclFirst()), to);
 
                     } else if(!outlierExcludeFirstNpresent && outlierExcludeLastNpresent)   
                     {
-                        //period.excluding(0, model.getOutlierExclLast());
                         outlierPeriod.between(from, to.minus(model.getOutlierExclLast()));
                     }
                 }   
@@ -590,68 +548,31 @@ public class TSmodelSetup {
             }
                  
             
-            /*
-    "outlier.tcrate":0.7
-    "outlier.usedefcv":true/false
-             */
-            //Alessandro's block
+ 
             o.setDeltaTC(model.getOutlierTcrate()); //Alessandro
             
+            double CV=3.5;
+            TsPeriodSelector span = o.getSpan();
+            TsPeriod startPeriod = new TsPeriod(tsData.getFrequency(), span.getD0());
+            TsPeriod endPeriod   = new TsPeriod(tsData.getFrequency(), span.getD1());
+            int nObsB = endPeriod.minus(startPeriod);
             if (!model.isOutlierUsedefcv())
             {
                 if(model.getOutlierCv()!=0.0 && model.getOutlierCv()>=2) //&& !("NA".equals(model.getOutlierCv()))
                 {
-                    o.setCriticalValue(model.getOutlierCv());
-                }
-                else
-                { 
-                    o.setCriticalValue(3.5);
-                } 
+                    //o.setCriticalValue(model.getOutlierCv());
+                    CV = model.getOutlierCv();
+                }               
             } else 
             {
-                // logica per il calcolo del CV
-                double CV;
-                
-                TsPeriodSelector span = o.getSpan();
-                
-                TsPeriod startPeriod = new TsPeriod(tsData.getFrequency(), span.getD0());
-                TsPeriod endPeriod   = new TsPeriod(tsData.getFrequency(), span.getD1());
-
-                int nObsB = endPeriod.minus(startPeriod);
-                CV = calculateCriticalValue(nObsB);
-                //CV = 3.5;
-                //CV = 4;
-                
-//                if(model.getOutlierFrom()!=null && !model.getOutlierFrom().equals("NA"))
-//                {
-//                   SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");        
-//                   Date date_from=new Date();
-//                    try {
-//                        date_from = simpleDateFormat.parse(model.getOutlierFrom());
-//                    } catch (ParseException ex) {
-//                        Logger.getLogger(TSmodelSetup.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
-//                   
-//                   TsPeriod periodFrom = new TsPeriod(tsData.getFrequency(), date_from);
-//                   
-//                   int nPeriods=tsData.getEnd().minus(periodFrom);
-//                   CV = calculateCriticalValue(nPeriods);
-//                } 
-//                else if(model.getOutlierLast()!= null && !"NA".equals(model.getOutlierLast()) && Integer.parseInt(model.getOutlierLast()) != 0)
-//                {
-//                    CV = calculateCriticalValue(Integer.parseInt(model.getOutlierLast()));
-//                }    
-//                else
-//                {
-//                    int nObsTs= tsData.getObsCount();
-//                    CV = calculateCriticalValue(nObsTs);
-//                }    
-                
-
-                o.setCriticalValue(CV);
-//                o.setCriticalValue(3.5);
+                if(model.isOutlierEnabled())
+                {
+                    CV = calculateCriticalValue(nObsB);
+                }
             }
-            // end Alessandro's block
+            o.setCriticalValue(CV);
+            
+            
             // Alessandro: Added !o.contains(OutlierType.AO) && in every if
             if (!o.contains(OutlierType.AO) && model.isOutlierAo()) {
                 o.add(OutlierType.AO);
@@ -679,13 +600,10 @@ public class TSmodelSetup {
                 o.remove(OutlierType.SO);
             }
 
-            // end Alessandro's block
             o.setEML(model.isOutlierEml());
-            //o.setCriticalValue(model.getOutlierCv()); //placed before into if that controls if it should be read
         }
     }
 
-    //Method added by Alessandro
     private void fixOutliersAndVariablesCoefficients() {
 //   E.G. names: "Java-Object{{AO (2020-03-01)=[D@4ff3af97, AO (2020-06-01)=[D@5680f009, AO (2007-12-01)=[D@3a4e6da6, _ts_external_3@LYM_02_0=[D@73e0c775, _ts_external_2@TDU02M_0=[D@213d5189}}"
 //   return "_ts_external_3@LYM_02_0" "_ts_external_2@TDU02M_0"
@@ -697,14 +615,7 @@ public class TSmodelSetup {
         List<Double> usrDefVarsCoef = getUsrDefCoefVars(usrDefVarCoefs, usrDefVarTypes);
 
         TsFrequency f = TsFrequency.valueOf(model.getFrequency());
-        //String[] varNames = tsSpec.getTramoSpecification().getRegression().getRegressionVariableNames(f);
-        //String[] varShortNames = tsSpec.getTramoSpecification().getRegression().getRegressionVariableShortNames(f);
-        
-//        for(int k=0; k<tsSpec.getTramoSpecification().getRegression().getUserDefinedVariablesCount();k++)
-//        {
-//            TsVariableDescriptor vdesc = tsSpec.getTramoSpecification().getRegression().getUserDefinedVariable(k);
-//            System.out.println("");
-//        }
+
                 
         if (usrDefOutlierCoefs != null && !usrDefOutlierCoefs.isEmpty())
         {
@@ -719,41 +630,25 @@ public class TSmodelSetup {
                     String outName = outDef.toString();
                     outName=transformOutlierStringFromOutlierDef(outName);
 
-                    //if(!usrDefOutlierCoefs.get(i).equals("NA"))
-                    //{
-                        double[] outVal = {Double.parseDouble(usrDefOutlierCoefs.get(i))};
-                        if(outVal[0] != 0)
-                        {
+
+                    double[] outVal = {Double.parseDouble(usrDefOutlierCoefs.get(i))};
+                    if(outVal[0] != 0)
+                    {
                             tsSpec.getTramoSpecification().getRegression().setFixedCoefficients(outName, outVal);
-                        }      
-                        i++;
-                    //}    
+                    }      
+                    i++;
 
                 }
             }    
 
         }
-
-//        int nOuts = tsSpec.getTramoSpecification().getRegression().getOutliersCount(); // the first nOuts variables are outliers
-        
-        //String[] tdVarNames=filterStringsStartingWithTd(varNames);
-        
         
         int j=0;
         for(String vName : this.tdVarNames)
         {   
-//            vName = vName.replaceFirst("^(td\\|external@)td\\|", "$1"); // removes "td|" after @
-//            vName = vName.replaceFirst("^td\\|external@", "external@").replace("@", ".");
-//            vName = vName.replaceFirst("^td\\|external@td\\|", "");
-//            vName = vName.replaceAll("^td\\|", "")  // Rimuove "td|" all'inizio
-//             .replaceAll("td\\|", "")    // Rimuove "td|" dopo la "@"
-//             .replaceAll("@", ".");      // Sostituisce "@" con "."
-//            vName = vName.replaceAll("^td\\|", "")  // Rimuove "td|" all'inizio
-//            .replaceAll("td\\|", "");    // Rimuove "td|" dopo la "@"
-//            vName = "td|" + vName.replaceAll(".", "@");
+
             vName = "td|"+vName.replaceAll("\\.", "@");
             
-            //double[] varVal = {Double.parseDouble(usrDefVarCoefs.get(j))};
             if(j<tdCoef.size())
             {    
                 double varVal = tdCoef.get(j);
@@ -762,10 +657,7 @@ public class TSmodelSetup {
                 {
                     tsSpec.getTramoSpecification().getRegression().setFixedCoefficients(vName, new double[]{varVal});
                 }    
-                
-                //tsSpec.getTramoSpecification().getRegression().setCoefficients(vName, new double[]{varVal});
-                
-
+               
                 j++;
             }
 
@@ -776,7 +668,6 @@ public class TSmodelSetup {
         {   
             vName = vName.replaceAll("\\.", "@");
             
-            //double[] varVal = {Double.parseDouble(usrDefVarCoefs.get(j))};
             if(j<usrDefVarsCoef.size())
             {    
                 double varVal = usrDefVarsCoef.get(j);
@@ -785,10 +676,6 @@ public class TSmodelSetup {
                 {
                     tsSpec.getTramoSpecification().getRegression().setFixedCoefficients(vName, new double[]{varVal});
                 }    
-                
-                //tsSpec.getTramoSpecification().getRegression().setCoefficients(vName, new double[]{varVal});
-                
-
                 j++;
             }
 
@@ -804,15 +691,10 @@ public class TSmodelSetup {
             aspec = new AutoModelSpec();
             tsSpec.getTramoSpecification().setAutoModel(aspec);
         }
-        /*
-    "automdl.armalimit":1, 
-    "automdl.reducecv":0.12, 
-    "automdl.ljungboxlimit":0.95, 
 
-         */
-        aspec.setTsig(model.getAutomdlArmalimit()); //Alessandro
-        aspec.setPc(model.getAutomdlReducecv()); //Alessandro
-        aspec.setPcr(model.getAutomdlLjungboxlimit()); //Alessandro
+        aspec.setTsig(model.getAutomdlArmalimit()); 
+        aspec.setPc(model.getAutomdlReducecv()); 
+        aspec.setPcr(model.getAutomdlLjungboxlimit()); 
         aspec.setEnabled(model.isAutomdlEnabled());
         aspec.setAcceptDefault(model.isAutomdlAcceptdefault());
         aspec.setCancel(model.getAutomdlCancel());
@@ -824,7 +706,7 @@ public class TSmodelSetup {
 
     private void setArima() 
     {
-        String seriesName = model.getSeriesName();
+//        String seriesName = model.getSeriesName();
 
         
         
@@ -834,12 +716,7 @@ public class TSmodelSetup {
             aspec = new ArimaSpec();
             tsSpec.getTramoSpecification().setArima(aspec);
         }
-        /*
-    "arima.coefEnabled":true/false, 
-    "arima.coef":"NA" o vettore di coefficienti
-    "arima.coefType":"NA", o vettore di procedure di stima
-         */
-        //begin Alessandro
+
         List<String> arimaCoefs = model.getArimaCoef();
         List<String> arimaCoefTypes = model.getArimaCoefType();
         int p = model.getArimaP();
@@ -871,7 +748,7 @@ public class TSmodelSetup {
             
             if(p>0)
             {   
-                int phiIdx=0;
+                int phiIdx;
                 Parameter[] phiCoefficients = new Parameter[p];
                 for(int i = 0; i < pCoefs.size(); i++) 
                 {
@@ -911,7 +788,7 @@ public class TSmodelSetup {
 
             if(bp>0)
             {     
-                int bPhiIdx=0;
+                int bPhiIdx;
                 Parameter[] bPhiCoefficients = new Parameter[bp];
                 for(int i = 0; i < bpCoefs.size(); i++) 
                 {
@@ -920,37 +797,38 @@ public class TSmodelSetup {
                     bPhiCoefficients[bPhiIdx] = new Parameter();
                     
                     String bPhiType = bpCoefs.get(i).getType();
-                    if(bPhiType.equals("Fixed"))
-                    {
-                        if(!pCoefs.get(i).getCoef().equals("NA"))
-                        {
-                            double coefficient = Double.parseDouble(bpCoefs.get(i).getCoef());
-
-                            
-                            bPhiCoefficients[bPhiIdx].setType(ParameterType.Fixed);
-                            bPhiCoefficients[bPhiIdx].setValue(coefficient);
-                            //bPhiCoefficients[bPhiIdx].setStde(0.0);
-                        }
-                        else
-                        {
+                    switch (bPhiType) {
+                        case "Fixed":
+                            if(!pCoefs.get(i).getCoef().equals("NA"))
+                            {
+                                double coefficient = Double.parseDouble(bpCoefs.get(i).getCoef());
+                                
+                                
+                                bPhiCoefficients[bPhiIdx].setType(ParameterType.Fixed);
+                                bPhiCoefficients[bPhiIdx].setValue(coefficient);
+                                //bPhiCoefficients[bPhiIdx].setStde(0.0);
+                            }
+                            else
+                            {
+                                bPhiCoefficients[bPhiIdx].setType(ParameterType.Undefined);
+                            }   break;
+                        case "Initial":
+                            bPhiCoefficients[bPhiIdx].setType(ParameterType.Initial);
+                            // what is it?
+                            break;
+                        case "Undefined":
                             bPhiCoefficients[bPhiIdx].setType(ParameterType.Undefined);
-                        }
+                            break;
+                        default:
+                            break;
                     }
-                    else if(bPhiType.equals("Initial"))
-                    {
-                        bPhiCoefficients[bPhiIdx].setType(ParameterType.Initial);
-                        // what is it?
-                    }else if(bPhiType.equals("Undefined")) 
-                    {
-                        bPhiCoefficients[bPhiIdx].setType(ParameterType.Undefined);
-                    }              
                 }
                 aspec.setBPhi(bPhiCoefficients); 
             }
             
             if(q>0)
             {   
-                int thetaIdx=0;
+                int thetaIdx;
                 Parameter[] thetaCoefficients = new Parameter[q];
                 for(int i = 0; i < qCoefs.size(); i++) 
                 {
@@ -959,37 +837,37 @@ public class TSmodelSetup {
                     thetaCoefficients[thetaIdx] = new Parameter();
                     
                     String thetaType = qCoefs.get(i).getType();
-                    if(thetaType.equals("Fixed"))
-                    {
-                        if(!qCoefs.get(i).getCoef().equals("NA"))
-                        {
-                            double coefficient = Double.parseDouble(qCoefs.get(i).getCoef());
-                            
-                            thetaCoefficients[thetaIdx].setType(ParameterType.Fixed);
-                            thetaCoefficients[thetaIdx].setValue(coefficient);
-                            //thetaCoefficients[thetaIdx].setStde(0.0);
-                        }
-                        else
-                        {
+                    switch (thetaType) {
+                        case "Fixed":
+                            if(!qCoefs.get(i).getCoef().equals("NA"))
+                            {
+                                double coefficient = Double.parseDouble(qCoefs.get(i).getCoef());
+                                
+                                thetaCoefficients[thetaIdx].setType(ParameterType.Fixed);
+                                thetaCoefficients[thetaIdx].setValue(coefficient);
+                                //thetaCoefficients[thetaIdx].setStde(0.0);
+                            }
+                            else
+                            {
+                                thetaCoefficients[thetaIdx].setType(ParameterType.Undefined);
+                            }   break;
+                        case "Initial":
+                            thetaCoefficients[thetaIdx].setType(ParameterType.Initial);
+                            // what is it?
+                            break;
+                        case "Undefined":
                             thetaCoefficients[thetaIdx].setType(ParameterType.Undefined);
-                        }
-                        
+                            break;
+                        default:
+                            break;
                     }
-                    else if(thetaType.equals("Initial"))
-                    {
-                        thetaCoefficients[thetaIdx].setType(ParameterType.Initial);
-                        // what is it?
-                    }else if(thetaType.equals("Undefined")) 
-                    {
-                        thetaCoefficients[thetaIdx].setType(ParameterType.Undefined);
-                    }              
                 }
                 aspec.setTheta(thetaCoefficients); 
             }
             
             if(bq>0)
             {   
-                int bthetaIdx=0;
+                int bthetaIdx;
                 Parameter[] bthetaCoefficients = new Parameter[bq];
                 for(int i = 0; i < bqCoefs.size(); i++) 
                 {
@@ -998,32 +876,32 @@ public class TSmodelSetup {
                     bthetaCoefficients[bthetaIdx] = new Parameter();
                     
                     String bthetaType = bqCoefs.get(i).getType();
-                    if(bthetaType.equals("Fixed"))
-                    {
-                        if(!bqCoefs.get(i).getCoef().equals("NA"))
-                        {
-                            double coefficient = Double.parseDouble(bqCoefs.get(i).getCoef());
-
+                    switch (bthetaType) {
+                        case "Fixed":
+                            if(!bqCoefs.get(i).getCoef().equals("NA"))
+                            {
+                                double coefficient = Double.parseDouble(bqCoefs.get(i).getCoef());
+                                
+                                
+                                bthetaCoefficients[bthetaIdx].setType(ParameterType.Fixed);
+                                bthetaCoefficients[bthetaIdx].setValue(coefficient);
+                                //bthetaCoefficients[bthetaIdx].setStde(0.0);
+                            }
                             
-                            bthetaCoefficients[bthetaIdx].setType(ParameterType.Fixed);
-                            bthetaCoefficients[bthetaIdx].setValue(coefficient);
-                            //bthetaCoefficients[bthetaIdx].setStde(0.0);
-                        }
-                        
-                        else
-                        {
+                            else
+                            {
+                                bthetaCoefficients[bthetaIdx].setType(ParameterType.Undefined);
+                            }   break;
+                        case "Initial":
+                            bthetaCoefficients[bthetaIdx].setType(ParameterType.Initial);
+                            // what is it?
+                            break;
+                        case "Undefined":
                             bthetaCoefficients[bthetaIdx].setType(ParameterType.Undefined);
-                        }
-                        
+                            break;
+                        default:
+                            break;
                     }
-                    else if(bthetaType.equals("Initial"))
-                    {
-                        bthetaCoefficients[bthetaIdx].setType(ParameterType.Initial);
-                        // what is it?
-                    }else if(bthetaType.equals("Undefined")) 
-                    {
-                        bthetaCoefficients[bthetaIdx].setType(ParameterType.Undefined);
-                    }              
                 }
                 aspec.setBTheta(bthetaCoefficients); 
             }
@@ -1041,8 +919,7 @@ public class TSmodelSetup {
             sspec = new SeatsSpecification();
             tsSpec.setSeatsSpecification(sspec);
         }
-        /*"seats.maBoundary":0.95,*/
-        sspec.setXlBoundary(model.getSeatsMaBoundary()); //Alessandro
+        sspec.setXlBoundary(model.getSeatsMaBoundary()); 
         sspec.setPredictionLength(model.getSeatsPredictionLength());
         sspec.setApproximationMode(SeatsSpecification.ApproximationMode.valueOf(model.getSeatsApprox()));
         sspec.setTrendBoundary(model.getSeatsTrendBoundary());
@@ -1169,73 +1046,6 @@ public class TSmodelSetup {
     }
     
     
-    // Jean
-//    public static ProcessingContext readContext(String directoryPathExtReg) {
-//                
-//        for(DestSpecVarFromFileInfo usrDefVar:userDefVarFileInfoList)
-//        {
-//            
-//            if(!usrdefVarTypes.get(idxUsrDefVarTypes).equals("Calendar")) //Calendar are for trading days
-//            {        
-//                Map<String, TsData> usrDefVariables = null;
-//                try {
-//                     String startDate = usrDefVar.getStart();
-//                     if(!isValidDate(startDate))
-//                     {
-//                         System.out.println(startDate+" is not correctly formatted (yyyy-MM-dd)");
-//                         // exception (?)
-//                     }
-//                    int startYear  = Integer.parseInt(startDate.substring(0, 4)); //YYYY
-//                    int startMonth = Integer.parseInt(startDate.substring(5, 7)); //MM
-//
-//
-//                    TsFrequency freq=TsFrequency.valueOf(model.getFrequency());
-//
-//                    usrDefVariables = ExtRegDataReaderTSplus.readTsFile(directoryPathExtReg, usrDefVar.getContainer(), freq , startYear, startMonth-1);
-//                    } catch (IOException ex) {
-//                        Logger.getLogger(TSmodelSetup.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
-//
-//                    TsVariables vars = new TsVariables();
-//                    List<TsVariableDescriptor> varsDescriptor = new ArrayList<TsVariableDescriptor>();
-//                    String varNameForDescriptor=usrDefVar.getContainer().substring(0, usrDefVar.getContainer().lastIndexOf('.'));
-//                    List<String> varNames = new ArrayList<String>();
-//                    
-//                    for (Map.Entry<String, TsData> variable : usrDefVariables.entrySet()) {
-//                        String key = variable.getKey();
-//                        TsData value = variable.getValue();
-//
-//                        TsVariable var = new TsVariable(value);
-//                        var.setName(key); 
-//                        vars.set(key, var);
-//                        varNames.add(key);
-//
-//                        
-//                        
-//                    }
-//                    // get filename without extension, to be used as vars Name
-//                    this.context.getTsVariableManagers().set(varNameForDescriptor, vars);
-//                        
-//                    TsVariableDescriptor vDesc = new TsVariableDescriptor();
-//                    int idx=0;
-//                    for(String vName:varNames)
-//                    {    
-//                        vDesc.setName(varNameForDescriptor+"."+vName);
-//                        String type = model.getUsrdefVarType().get(idx);
-//                        if(type!=null)
-//                        {
-//                            vDesc.setEffect(TsVariableDescriptor.UserComponentType.valueOf(type));
-//                        }
-//                        idx++;
-//                    }    
-//                    this.tsSpec.getTramoSpecification().getRegression().add(vDesc);
-//                        
-//            }
-//            idxUsrDefVarTypes++;
-//        }    
-//    }
-//
-    //
 
     public static String transformOutlierStringFromOutlierDef(String input) {
         // Verifica che la stringa sia del formato corretto
@@ -1331,21 +1141,35 @@ public class TSmodelSetup {
         return usrDefVarCoefsVars;
     }
 
-    public static double calculateCriticalValue(int numberOfObservations)
+    public double calculateCriticalValue(int numberOfObservations)
     {
-     
+        double CV;
+        
         if (numberOfObservations <= 50) {
-            return 3.0;
+            CV = 3.3;
         } else if (numberOfObservations >= 450) {
-            return 4.0;
+            CV = 4.3;
         } else {
-            return 3.0 + 0.0025 * (numberOfObservations - 50);
+            CV = 3.3 + 0.0025 * (numberOfObservations- 50);
         }
-        /* one piece is missing: if LB is NOT significant, 
-        * CV = (1- this.model.getReduceCV()) * CV 
-        * it is needed to run the processing 2 times: one to compute the LB and one
-        * to adjust CV
-        */
+                
+        return CV;
     }
 
+    // NOT TO BE USED
+    public double adjustOutliersCV(Double CV)
+    {
+       
+        if(CV != null && this.model.isOutlierEnabled())
+        {
+            CV = (1- this.model.getAutomdlReducecv()) * CV;
+
+        }
+        System.out.println("Automatic outliers CV computed: "+ CV);
+        this.getTsSpec().getTramoSpecification().getOutliers().setCriticalValue(CV);
+
+        
+        return CV;
+    }        
+    
 }

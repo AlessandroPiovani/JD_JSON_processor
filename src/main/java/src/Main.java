@@ -3,9 +3,11 @@ package src;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ec.satoolkit.algorithm.implementation.TramoSeatsProcessingFactory;
+import ec.satoolkit.diagnostics.QSTest;
 import ec.satoolkit.tramoseats.TramoSeatsSpecification;
 import ec.tstoolkit.algorithm.CompositeResults;
 import ec.tstoolkit.algorithm.ProcessingContext;
+import ec.tstoolkit.information.StatisticalTest;
 import ec.tstoolkit.jdr.ws.MultiProcessing;
 import ec.tstoolkit.jdr.ws.Workspace;
 import ec.tstoolkit.timeseries.simplets.TsData;
@@ -38,14 +40,7 @@ public class Main {
             String filePath = localpath + "\\specifications_new_full_TUR.txt";
             //String filePath = localpath + "\\specifications_db.txt";
             List<Map<String, Object>> jsonData = JsonReader.readJsonFile(filePath);
-
-            // Esegui ulteriori operazioni sulla mappa tsDataMap
-            //for (Map.Entry<String, TsData> entry : tsDataMap.entrySet()) {
-            //    System.out.println("Serie: " + entry.getKey());
-            //    System.out.println(entry.getValue());
-            //}
-            // Print or use the data as you prefer
-            
+          
             
             // We will use the library jdr-2.2.5.jar (see in https://github.com/nbbrd/jdemetra-sa-advanced for the last release of the library)
             // That library is used in rjdemetra. It has been slightly modified (2.2.5) to be used in this code 
@@ -74,12 +69,13 @@ public class Main {
                 //create the object
                 DestSpecificationsModel model = mapper.readValue(mapper.writeValueAsString(data), DestSpecificationsModel.class);
                 // The context is initialized in this function call
-                TSmodelSetup tsModelSetup = new TSmodelSetup(model, context, directoryPathExtReg, tsDataMap.get(data.get("series_name")));
+                TSmodelSetup tsModelSetup = new TSmodelSetup(model, context, directoryPathExtReg, tsDataMap.get(seriesName));
                 TramoSeatsSpecification TRAMOSEATSspec = tsModelSetup.getTsSpec();
 
                 CompositeResults rslt = TramoSeatsProcessingFactory.process(tsDataMap.get(seriesName), TRAMOSEATSspec, context);
-               
                 TsData sa_data = rslt.getData("sa", TsData.class);
+                                
+                
                 System.out.println(sa_data);
                  
                 // add in the multiprocessing each single processing
