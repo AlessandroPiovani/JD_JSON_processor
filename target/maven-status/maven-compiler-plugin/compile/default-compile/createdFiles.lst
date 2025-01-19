@@ -16,6 +16,7 @@ src\DataReaderCSV_IstatFormat.class
 src\DestSpecificationsModel$RampsInfoDeserializer.class
 src\ArimaCoefficient.class
 unused\SeasonalDataProcessingServiceImpl.class
+src\DestSpecificationsModel$StringOrNumberDeserializer.class
 src\DestSpecVarFromFileInfo.class
 src\InterventionVariablesInfo.class
 src\DestSpecificationsModel$InterventionVariablesInfoDeserializer.class

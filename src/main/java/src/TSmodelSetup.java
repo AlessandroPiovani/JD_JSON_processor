@@ -250,75 +250,77 @@ public class TSmodelSetup {
         }
         
         if (!isNull(model.getTradingdaysOption())) {
-            if (model.getTradingdaysOption().equals("TradingDays")) {
-                tdspec.setTradingDaysType(TradingDaysType.TradingDays);
-            } else if (model.getTradingdaysOption().equals("WorkingDays")) {
-                tdspec.setTradingDaysType(TradingDaysType.WorkingDays);
-            } else if (model.getTradingdaysOption().equals("UserDefined")) {
-                List<DestSpecVarFromFileInfo> userDefVarFileInfoList = model.getUserDefVarFileInfo();
-                int idxUsrDefVarTypes = 0;
-                List<String> usrdefVarTypes = model.getUsrdefVarType();
- 
-                TsVariables vars = context.getTsVariables(EXTERNAL);
-                List<String> varNames = new ArrayList<>(); // AFTER
-                for (DestSpecVarFromFileInfo usrDefVar : userDefVarFileInfoList) {
-                    if (usrdefVarTypes.get(idxUsrDefVarTypes).equals("Calendar")) 
+            switch (model.getTradingdaysOption()) {
+                case "TradingDays":
+                    tdspec.setTradingDaysType(TradingDaysType.TradingDays);
+                    break;
+                case "WorkingDays":
+                    tdspec.setTradingDaysType(TradingDaysType.WorkingDays);
+                    break;
+                case "UserDefined":
+                    List<DestSpecVarFromFileInfo> userDefVarFileInfoList = model.getUserDefVarFileInfo();
+                    int idxUsrDefVarTypes = 0;
+                    List<String> usrdefVarTypes = model.getUsrdefVarType();
+                    TsVariables vars = context.getTsVariables(EXTERNAL);
+                    List<String> varNames = new ArrayList<>(); // AFTER
+                    for (DestSpecVarFromFileInfo usrDefVar : userDefVarFileInfoList)
                     {
-                        Map<String, TsData> usrDefVariables;
-                        String varNameForDescriptor = usrDefVar.getContainer().substring(0, usrDefVar.getContainer().lastIndexOf('.')); 
-                        if (!vars.contains(varNameForDescriptor) && !vars.contains(varNameForDescriptor + "_1"))
+                        if (usrdefVarTypes.get(idxUsrDefVarTypes).equals("Calendar"))
                         {
-                            // not yet read
-                            try {
-                                String startDate = usrDefVar.getStart();
-                                int startYear = Integer.parseInt(startDate.substring(0, 4));
-                                int startMonth = Integer.parseInt(startDate.substring(5, 7));
-
-                                //double[] extRegDataArray = ; // external regressor data
-                                //TsData extRegData = new TsData(TsFrequency.Monthly, startYear, startMonth-1, extRegDataArray, true);
-                                TsFrequency freq = TsFrequency.valueOf(model.getFrequency());
-                                usrDefVariables = ExtRegDataReaderTSplus.readTsFile(directoryPathExtReg, usrDefVar.getContainer(), freq, startYear, startMonth - 1);
-                                usrDefVar.setNumVar(usrDefVariables.size());
-                                for (Map.Entry<String, TsData> variable : usrDefVariables.entrySet()) {
-                                    String key = variable.getKey();
-                                    TsData value = variable.getValue();
-                                    TsVariable var = new TsVariable(key, value); // KEY AS A DESC IS FUNDAMENTAL TO PLOT THE NAME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                    var.setName(key); 
-                                    vars.set(key, var);
-                                    varNames.add(key);
+                            Map<String, TsData> usrDefVariables;
+                            String varNameForDescriptor = usrDefVar.getContainer().substring(0, usrDefVar.getContainer().lastIndexOf('.'));
+                            if (!vars.contains(varNameForDescriptor) && !vars.contains(varNameForDescriptor + "_1"))
+                            {
+                                // not yet read
+                                try {
+                                    String startDate = usrDefVar.getStart();
+                                    int startYear = Integer.parseInt(startDate.substring(0, 4));
+                                    int startMonth = Integer.parseInt(startDate.substring(5, 7));
                                     
+                                    //double[] extRegDataArray = ; // external regressor data
+                                    //TsData extRegData = new TsData(TsFrequency.Monthly, startYear, startMonth-1, extRegDataArray, true);
+                                    TsFrequency freq = TsFrequency.valueOf(model.getFrequency());
+                                    usrDefVariables = ExtRegDataReaderTSplus.readTsFile(directoryPathExtReg, usrDefVar.getContainer(), freq, startYear, startMonth - 1);
+                                    usrDefVar.setNumVar(usrDefVariables.size());
+                                    for (Map.Entry<String, TsData> variable : usrDefVariables.entrySet()) {
+                                        String key = variable.getKey();
+                                        TsData value = variable.getValue();
+                                        TsVariable var = new TsVariable(key, value); // KEY AS A DESC IS FUNDAMENTAL TO PLOT THE NAME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                        var.setName(key);
+                                        vars.set(key, var);
+                                        varNames.add(key);
+                                        
+                                    }
+                                    System.out.print("External regressors loaded for Trading Days: ");
+                                    System.out.println(varNameForDescriptor);
+                                } catch (IOException ex) {
+                                    Logger.getLogger(TSmodelSetup.class.getName()).log(Level.SEVERE, null, ex);
                                 }
-                                System.out.print("External regressors loaded for Trading Days: ");
-                                System.out.println(varNameForDescriptor);
-                            } catch (IOException ex) {
-                                Logger.getLogger(TSmodelSetup.class.getName()).log(Level.SEVERE, null, ex);
+                            } else if (usrDefVar.getNumVar() == 1) {
+                                varNames.add(varNameForDescriptor);
+                            } else {
+                                for (int i = 1; i <= usrDefVar.getNumVar(); ++i) {
+                                    StringBuilder builder = new StringBuilder();
+                                    builder.append(varNameForDescriptor)
+                                            .append('_').append(i);
+                                    varNames.add(builder.toString());
+                                }
                             }
-                        } else if (usrDefVar.getNumVar() == 1) {
-                            varNames.add(varNameForDescriptor);
-                        } else {
-                            for (int i = 1; i <= usrDefVar.getNumVar(); ++i) {
-                                StringBuilder builder = new StringBuilder();
-                                builder.append(varNameForDescriptor)
-                                        .append('_').append(i);
-                                varNames.add(builder.toString());
-                            }
+                            String[] vDescStr = varNames.stream().map(name -> EXTERNAL + '.' +name).toArray(String[]::new);
+                            tdspec.setUserVariables(vDescStr);
+                            
+                            this.tdVarNames = vDescStr; //ADDED
                         }
-                        String[] vDescStr = varNames.stream().map(name -> EXTERNAL + '.' +name).toArray(String[]::new);
-                        tdspec.setUserVariables(vDescStr);
-                        
-                        this.tdVarNames = vDescStr; //ADDED
-                    }
-                    idxUsrDefVarTypes++;
-                }
-
-            } else {
-                if (!model.getTradingdaysOption().equals("None") && !model.getTradingdaysOption().equals("NA")) {
-                    System.out.println("tradingdays.option field has an unknown value");
-                    tdspec.setTradingDaysType(TradingDaysType.None);
-                    // Stop the program and throw Exception?
-                } else {
-                    tdspec.setTradingDaysType(TradingDaysType.None);
-                }
+                        idxUsrDefVarTypes++;
+                    }   break;
+                default:
+                    if (!model.getTradingdaysOption().equals("None") && !model.getTradingdaysOption().equals("NA")) {
+                        System.out.println("tradingdays.option field has an unknown value");
+                        tdspec.setTradingDaysType(TradingDaysType.None);
+                        // Stop the program and throw Exception?
+                    } else {
+                        tdspec.setTradingDaysType(TradingDaysType.None);
+                    }   break;
             }
 
         }
@@ -741,8 +743,8 @@ public class TSmodelSetup {
             List<List<ArimaCoefficient>> coefsLists = splitArimaCoefficients(arimaCoefs, arimaCoefTypes, p, bp, q, bq);
 
             List<ArimaCoefficient> pCoefs  = coefsLists.get(0);
-            List<ArimaCoefficient> qCoefs = coefsLists.get(1);
-            List<ArimaCoefficient> bpCoefs  = coefsLists.get(2);
+            List<ArimaCoefficient> qCoefs  = coefsLists.get(1);
+            List<ArimaCoefficient> bpCoefs = coefsLists.get(2);
             List<ArimaCoefficient> bqCoefs = coefsLists.get(3);
 
             
@@ -757,29 +759,29 @@ public class TSmodelSetup {
                     phiCoefficients[phiIdx] = new Parameter();
                     
                     String phiType = pCoefs.get(i).getType();
-                    if(phiType.equals("Fixed"))
-                    {
-                        if(!pCoefs.get(i).getCoef().equals("NA"))
-                        {
-                            double coefficient = Double.parseDouble(pCoefs.get(i).getCoef());
-                                                        
-                            phiCoefficients[phiIdx].setType(ParameterType.Fixed);
-                            phiCoefficients[phiIdx].setValue(coefficient);
-                            //phiCoefficients[phiIdx].setStde(0.0);
-                        }
-                        else
-                        {
+                    switch (phiType) {
+                        case "Fixed":
+                            if(!pCoefs.get(i).getCoef().equals("NA"))
+                            {
+                                double coefficient = Double.parseDouble(pCoefs.get(i).getCoef());
+                                
+                                phiCoefficients[phiIdx].setType(ParameterType.Fixed);
+                                phiCoefficients[phiIdx].setValue(coefficient);
+                                //phiCoefficients[phiIdx].setStde(0.0);
+                            }
+                            else
+                            {
+                                phiCoefficients[phiIdx].setType(ParameterType.Undefined);
+                            }   break;
+                        case "Initial":
+                            phiCoefficients[phiIdx].setType(ParameterType.Initial);
+                            // what is it?
+                            break;
+                        case "Undefined":
                             phiCoefficients[phiIdx].setType(ParameterType.Undefined);
-                        }
-                        
-                    }
-                    else if(phiType.equals("Initial"))
-                    {
-                        phiCoefficients[phiIdx].setType(ParameterType.Initial);
-                        // what is it?
-                    }else if(phiType.equals("Undefined")) 
-                    {
-                        phiCoefficients[phiIdx].setType(ParameterType.Undefined);
+                            break;
+                        default:
+                            break;
                     }
                 }
                 aspec.setPhi(phiCoefficients); 
