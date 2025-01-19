@@ -611,12 +611,12 @@ public class TSmodelSetup {
 //   return "_ts_external_3@LYM_02_0" "_ts_external_2@TDU02M_0"
 
         List<String> usrDefOutlierCoefs = model.getUsrdefOutliersCoef();
-        List<String> usrDefVarCoefs = model.getUsrdefVarCoef();
-        List<String> usrDefVarTypes = model.getUsrdefVarType();
+        List<String> usrDefVarCoefs     = model.getUsrdefVarCoef();
+        List<String> usrDefVarTypes     = model.getUsrdefVarType();
         List<Double> tdCoef         = getUsrDefCoefTd(usrDefVarCoefs, usrDefVarTypes);
         List<Double> usrDefVarsCoef = getUsrDefCoefVars(usrDefVarCoefs, usrDefVarTypes);
 
-        TsFrequency f = TsFrequency.valueOf(model.getFrequency());
+        //TsFrequency f = TsFrequency.valueOf(model.getFrequency());
 
                 
         if (usrDefOutlierCoefs != null && !usrDefOutlierCoefs.isEmpty())
@@ -804,8 +804,7 @@ public class TSmodelSetup {
                             if(!pCoefs.get(i).getCoef().equals("NA"))
                             {
                                 double coefficient = Double.parseDouble(bpCoefs.get(i).getCoef());
-                                
-                                
+                                                                
                                 bPhiCoefficients[bPhiIdx].setType(ParameterType.Fixed);
                                 bPhiCoefficients[bPhiIdx].setValue(coefficient);
                                 //bPhiCoefficients[bPhiIdx].setStde(0.0);
