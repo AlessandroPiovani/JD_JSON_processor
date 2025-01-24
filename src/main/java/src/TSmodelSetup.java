@@ -47,9 +47,9 @@ import java.util.logging.Logger;
 import static src.ArimaSplitter.splitArimaCoefficients;
 
 /**
- *
- * @author cazora apiovani
- * alessandro.piovani@istat.it
+ * @authors 
+ * cazora 
+ * apiovani (alessandro.piovani@istat.it)
  */
 public class TSmodelSetup {
 
@@ -58,7 +58,8 @@ public class TSmodelSetup {
     private final ProcessingContext context; // Alessandro  
     private final TramoSeatsSpecification tsSpec; // TOLTO FINAL
     private String[] tdVarNames     = {}; //added
-    private String[] usrDefVarNames = {}; //added
+    private String[] usrDefVarNames = {}; //added/**
+
     private TsData tsData; //added
     
     public TsData getTsData() {
@@ -235,10 +236,6 @@ public class TSmodelSetup {
             } catch (NumberFormatException | ParseException e) {
                 System.out.println("Problem in SetOutlier function");
             }
-
-
-
-
     }
 
     private void setTradingDays(String directoryPathExtReg) {
@@ -719,20 +716,22 @@ public class TSmodelSetup {
             tsSpec.getTramoSpecification().setArima(aspec);
         }
 
-        List<String> arimaCoefs = model.getArimaCoef();
+        List<String> arimaCoefs     = model.getArimaCoef();
         List<String> arimaCoefTypes = model.getArimaCoefType();
-        int p = model.getArimaP();
-        int q = model.getArimaQ();
+        int p  = model.getArimaP();
+        int d  = model.getArimaD();
+        int q  = model.getArimaQ();
         int bp = model.getArimaBP();
+        int bd = model.getArimaBD();
         int bq = model.getArimaBQ();
 
         
         aspec.setMean(model.isArimaMu());
         aspec.setP(p);
-        aspec.setD(model.getArimaD());
+        aspec.setD(d);
         aspec.setQ(q);
         aspec.setBP(bp);
-        aspec.setBD(model.getArimaBD());
+        aspec.setBD(bd);
         aspec.setBQ(bq);
             
         
@@ -947,92 +946,98 @@ public class TSmodelSetup {
     private void setRamps()
     {
         List<RampsInfo> ramps = model.getRamps(); 
-        Day dayStart, dayEnd;
-        Date dateStart, dateEnd;
-        Ramp rp;
-        ArrayList<Ramp> rampsList = new ArrayList<Ramp>();
-        String rampName;
-        
-        int year_s, month_s, day_s, year_e, month_e, day_e;
-        
-        for(RampsInfo r : ramps)
-        {   
-            year_s  = Integer.parseInt(r.getStart().substring(0, 4));//substr(ramp$start, 1, 4))
-            month_s = Integer.parseInt(r.getStart().substring(5, 7));
-            day_s   = Integer.parseInt(r.getStart().substring(8, 10));
-            // day_start_int = Day.calc(year_s, month_s-1, day_s-1));
-            
-            dateStart = new Date(year_s-1900, month_s-1, day_s);
-            dayStart  = new Day(dateStart);
-            
-            year_e  = Integer.parseInt(r.getEnd().substring(0, 4));//substr(ramp$start, 1, 4))
-            month_e = Integer.parseInt(r.getEnd().substring(5, 7));
-            day_e   = Integer.parseInt(r.getEnd().substring(8, 10));
-            
-            dateEnd = new Date(year_e-1900, month_e-1, day_e);
-            dayEnd  = new Day(dateEnd);
-            
-            rp = new Ramp(dayStart, dayEnd);
-            
-            rampsList.add(rp);
-            
-            if(r.getFixed_coef()!=0.0)
-            {
-                rampName = "rp$" + r.getStart() + "$" + r.getEnd();
-                tsSpec.getTramoSpecification().getRegression().setFixedCoefficients(rampName, new double[]{r.getFixed_coef()});
-            }    
+          
+        if(ramps != null)
+        {    
+            Day dayStart, dayEnd;
+            Date dateStart, dateEnd;
+            Ramp rp;
+            ArrayList<Ramp> rampsList = new ArrayList<Ramp>();
+            String rampName;
+
+            int year_s, month_s, day_s, year_e, month_e, day_e;
+
+            for(RampsInfo r : ramps)
+            {   
+                year_s  = Integer.parseInt(r.getStart().substring(0, 4));//substr(ramp$start, 1, 4))
+                month_s = Integer.parseInt(r.getStart().substring(5, 7));
+                day_s   = Integer.parseInt(r.getStart().substring(8, 10));
+                // day_start_int = Day.calc(year_s, month_s-1, day_s-1));
+
+                dateStart = new Date(year_s-1900, month_s-1, day_s);
+                dayStart  = new Day(dateStart);
+
+                year_e  = Integer.parseInt(r.getEnd().substring(0, 4));//substr(ramp$start, 1, 4))
+                month_e = Integer.parseInt(r.getEnd().substring(5, 7));
+                day_e   = Integer.parseInt(r.getEnd().substring(8, 10));
+
+                dateEnd = new Date(year_e-1900, month_e-1, day_e);
+                dayEnd  = new Day(dateEnd);
+
+                rp = new Ramp(dayStart, dayEnd);
+
+                rampsList.add(rp);
+
+                if(r.getFixed_coef()!=0.0)
+                {
+                    rampName = "rp$" + r.getStart() + "$" + r.getEnd();
+                    tsSpec.getTramoSpecification().getRegression().setFixedCoefficients(rampName, new double[]{r.getFixed_coef()});
+                }    
+            }
+
+            Ramp[] rampsArray = rampsList.toArray(new Ramp[0]);
+            tsSpec.getTramoSpecification().getRegression().setRamps(rampsArray);
         }
-        
-        Ramp[] rampsArray = rampsList.toArray(new Ramp[0]);
-        tsSpec.getTramoSpecification().getRegression().setRamps(rampsArray);
-        
+
     }        
     
     private void setInterventionVariables()
     {
         List<InterventionVariablesInfo> ivs = model.getInterventionVariables(); 
-        Day dayStart, dayEnd;
-        Date dateStart, dateEnd;
-        InterventionVariable interventionVar = null;
+        if(ivs != null)
+        {    
+            Day dayStart, dayEnd;
+            Date dateStart, dateEnd;
+            InterventionVariable interventionVar = null;
 
-        int year_s, month_s, day_s, year_e, month_e, day_e;
-        //List<Sequence> seqList=new ArrayList<Sequence>();
-        
-        for(InterventionVariablesInfo iv : ivs)
-        {   
-            interventionVar = new InterventionVariable();
-            interventionVar.setDelta(iv.getDelta());
-            interventionVar.setDeltaS(iv.getDelta_s());
-            if(iv.getD1DS()) //beacause setting of D1DS resets all the deltas
-            {
-                interventionVar.setD1DS(iv.getD1DS());
-            }    
-            
-            
-            List<SequenceInfo> seqs = iv.getSeq();
-            for(SequenceInfo s : seqs)
-            {
-                year_s  = Integer.parseInt(s.getStart().substring(0, 4));//substr(ramp$start, 1, 4))
-                month_s = Integer.parseInt(s.getStart().substring(5, 7));
-                day_s   = Integer.parseInt(s.getStart().substring(8, 10));
-                // day_start_int = Day.calc(year_s, month_s-1, day_s-1));
-            
-                dateStart = new Date(year_s-1900, month_s-1, day_s);
-                dayStart  = new Day(dateStart);
-            
-                year_e  = Integer.parseInt(s.getEnd().substring(0, 4));//substr(ramp$start, 1, 4))
-                month_e = Integer.parseInt(s.getEnd().substring(5, 7));
-                day_e   = Integer.parseInt(s.getEnd().substring(8, 10));
-            
-                dateEnd = new Date(year_e-1900, month_e-1, day_e);
-                dayEnd  = new Day(dateEnd);
-                
-                interventionVar.add(dayStart, dayEnd);
-            }    
-            
-            tsSpec.getTramoSpecification().getRegression().add(interventionVar);
+            int year_s, month_s, day_s, year_e, month_e, day_e;
+            //List<Sequence> seqList=new ArrayList<Sequence>();
+
+            for(InterventionVariablesInfo iv : ivs)
+            {   
+                interventionVar = new InterventionVariable();
+                interventionVar.setDelta(iv.getDelta());
+                interventionVar.setDeltaS(iv.getDelta_s());
+                if(iv.getD1DS()) //because setting of D1DS resets all the deltas
+                {
+                    interventionVar.setD1DS(iv.getD1DS());
+                }    
+
+
+                List<SequenceInfo> seqs = iv.getSeq();
+                for(SequenceInfo s : seqs)
+                {
+                    year_s  = Integer.parseInt(s.getStart().substring(0, 4));//substr(ramp$start, 1, 4))
+                    month_s = Integer.parseInt(s.getStart().substring(5, 7));
+                    day_s   = Integer.parseInt(s.getStart().substring(8, 10));
+                    // day_start_int = Day.calc(year_s, month_s-1, day_s-1));
+
+                    dateStart = new Date(year_s-1900, month_s-1, day_s);
+                    dayStart  = new Day(dateStart);
+
+                    year_e  = Integer.parseInt(s.getEnd().substring(0, 4));//substr(ramp$start, 1, 4))
+                    month_e = Integer.parseInt(s.getEnd().substring(5, 7));
+                    day_e   = Integer.parseInt(s.getEnd().substring(8, 10));
+
+                    dateEnd = new Date(year_e-1900, month_e-1, day_e);
+                    dayEnd  = new Day(dateEnd);
+
+                    interventionVar.add(dayStart, dayEnd);
+                }    
+
+                tsSpec.getTramoSpecification().getRegression().add(interventionVar);
+            }
         }
-        
     }
     
     

@@ -10,9 +10,9 @@ import java.util.List;
 
 // Classe per rappresentare ciascun elemento della collezione
 class ArimaCoefficient {
-    private int index;
-    private String coef;
-    private String type;
+    private final int index;
+    private final String coef;
+    private final String type;
 
     // Costruttore
     public ArimaCoefficient(int index, String coef, String type) {

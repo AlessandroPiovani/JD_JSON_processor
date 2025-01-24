@@ -9,20 +9,6 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.IOException;
 import java.util.ArrayList;
-/*import ec.satoolkit.tramoseats.TramoSeatsSpecification;
-import ec.satoolkit.x13.X13Specification;
-import ec.satoolkit.seats.SeatsSpecification;
-import ec.tstoolkit.modelling.DefaultTransformationType;
-import ec.tstoolkit.modelling.arima.tramo.ArimaSpec;
-import ec.tstoolkit.modelling.arima.tramo.AutoModelSpec;
-import ec.tstoolkit.modelling.arima.tramo.EasterSpec;
-import ec.tstoolkit.modelling.arima.tramo.EstimateSpec;
-import ec.tstoolkit.modelling.arima.tramo.OutlierSpec;
-import ec.tstoolkit.modelling.arima.tramo.TradingDaysSpec;
-import ec.tstoolkit.modelling.arima.tramo.TransformSpec;
-import ec.tstoolkit.timeseries.Day;
-import ec.tstoolkit.timeseries.TsPeriodSelector;
-import ec.tstoolkit.timeseries.regression.OutlierType;*/
 import java.util.List;
 
 
@@ -63,7 +49,7 @@ public class DestSpecificationsModel {
     private double estimateTol;
     @JsonProperty("estimate.eml")
     private boolean estimateEml;
-    @JsonProperty("estimate.urfinal") //<<---- dove si setta?
+    @JsonProperty("estimate.urfinal")
     private double estimateUrfinal;
     @JsonProperty("transform.function")
     private String transformFunction;
@@ -76,7 +62,7 @@ public class DestSpecificationsModel {
     @JsonProperty("usrdef.outliersDate")
     private List<String> usrdefOutliersDate;
     @JsonProperty("usrdef.outliersCoef")
-    private List<String> usrdefOutliersCoef; //Alessandro
+    private List<String> usrdefOutliersCoef; 
     @JsonProperty("usrdef.varEnabled")
     private boolean usrdefVarEnabled;
     @JsonProperty("usrdef.var")
@@ -84,12 +70,12 @@ public class DestSpecificationsModel {
     @JsonProperty("usrdef.varType")
     private List<String> usrdefVarType;
     @JsonProperty("usrdef.varCoef")
-    private List<String> usrdefVarCoef; //Alessandro
+    private List<String> usrdefVarCoef; 
     @JsonProperty("tradingdays.mauto")
     private String tradingdaysMauto;
     @JsonProperty("tradingdays.pftd")
     private double tradingdaysPftd;
-    @JsonProperty("tradingdays.option") //<<---- dove si setta?
+    @JsonProperty("tradingdays.option") 
     private String tradingdaysOption;
     @JsonProperty("tradingdays.leapyear")
     private boolean tradingdaysLeapyear;
@@ -130,13 +116,13 @@ public class DestSpecificationsModel {
     private boolean outlierLs;
     @JsonProperty("outlier.so")
     private boolean outlierSo;
-    @JsonProperty("outlier.usedefcv") //<<---- dove si setta?
+    @JsonProperty("outlier.usedefcv") 
     private boolean outlierUsedefcv;
     @JsonProperty("outlier.cv")
     private double outlierCv;
     @JsonProperty("outlier.eml")
     private boolean outlierEml;
-    @JsonProperty("outlier.tcrate") //<<---- dove si setta?
+    @JsonProperty("outlier.tcrate") 
     private double outlierTcrate;
     @JsonProperty("automdl.enabled")
     private boolean automdlEnabled;
@@ -148,7 +134,7 @@ public class DestSpecificationsModel {
     private double automdlUb1;
     @JsonProperty("automdl.ub2")
     private double automdlUb2;
-    @JsonProperty("automdl.armalimit") //<<---- dove si setta?
+    @JsonProperty("automdl.armalimit") 
     private double automdlArmalimit;
     @JsonProperty("automdl.reducecv")
     private double automdlReducecv;
@@ -170,13 +156,13 @@ public class DestSpecificationsModel {
     private int arimaBD;
     @JsonProperty("arima.bq")
     private int arimaBQ;
-    @JsonProperty("arima.coefEnabled") //<<---- dove si setta?
+    @JsonProperty("arima.coefEnabled") 
     private boolean arimaCoefEnabled;
-    @JsonProperty("arima.coef") //<<---- dove si setta?
+    @JsonProperty("arima.coef") 
     private List<String> arimaCoef;
-    @JsonProperty("arima.coefType") //<<---- dove si setta?
+    @JsonProperty("arima.coefType") 
     private List<String> arimaCoefType;
-    @JsonProperty("fcst.horizon") //<<---- dove si setta?
+    @JsonProperty("fcst.horizon") 
     private double fcstHorizon;
     @JsonProperty("seats.predictionLength")
     private int seatsPredictionLength;
@@ -263,160 +249,6 @@ public class DestSpecificationsModel {
     private void setupX13model() {
         
     }
-    
-    /*private void setTransform(){
-        TransformSpec tf=tsSpec.getTramoSpecification().getTransform();
-        if (tf==null){
-            tf=new TransformSpec();
-            tsSpec.getTramoSpecification().setTransform(tf);
-        }
-        tf.setFunction(DefaultTransformationType.valueOf(transformFunction));
-        tf.setFct(transformFct);
-        tf.setPreliminaryCheck(preliminaryCheck);
-    }
-    private void setEstimate() {
-        EstimateSpec espec = tsSpec.getTramoSpecification().getEstimate();
-        if (espec==null) {
-            espec=new EstimateSpec();
-            tsSpec.getTramoSpecification().setEstimate(espec);
-        }
-        /*
-"estimate.urfinal":0.96,
-        * /
-        espec.setTol(estimateTol);
-        espec.setEML(estimateEml);
-        try {
-            if (!isNull(estimateFrom)&&!isNull(estimateTo)) {
-                TsPeriodSelector period=new TsPeriodSelector();
-                Day from = Day.fromString(estimateFrom);
-                Day to = Day.fromString(estimateTo);
-                period.between(from, to);
-                period.excluding(estimateExclFirst, estimateExclLast);
-                period.first(estimateFirstN);
-                period.last(estimateLastN);
-                espec.setSpan(period);
-            }
-        } catch (Exception e) {
-        }
-    }
-    private void setTradingDays(){
-        TradingDaysSpec tdspec = tsSpec.getTramoSpecification().getRegression().getCalendar().getTradingDays();
-        if (tdspec==null) {
-            tdspec=new TradingDaysSpec();
-            tsSpec.getTramoSpecification().getRegression().getCalendar().setTradingDays(tdspec);
-        }
-        /*
-"tradingdays.option":"None",
-        * /
-        tdspec.setAutomaticMethod(TradingDaysSpec.AutoMethod.valueOf(tradingdaysMauto));
-        tdspec.setProbabibilityForFTest(tradingdaysPftd);
-        tdspec.setLeapYear(tradingdaysLeapyear);
-        tdspec.setStockTradingDays(tradingdaysStocktd);
-        tdspec.setTest(tradingdaysTestB);
-    }
-    private void setEaster() {
-        EasterSpec ieast = tsSpec.getTramoSpecification().getRegression().getCalendar().getEaster();
-        if (ieast==null) {
-            ieast=new EasterSpec();
-            tsSpec.getTramoSpecification().getRegression().getCalendar().setEaster(ieast);
-        }
-        ieast.setOption(EasterSpec.Type.valueOf(easterType));
-        ieast.setDuration(easterDuration);
-        ieast.setJulian(easterJulian);
-        ieast.setTest(easterTest);
-        
-    }
-    private void setOutliers() {
-
-        if (outlierEnabled) {
-            OutlierSpec o = tsSpec.getTramoSpecification().getOutliers();
-            if (o==null) {
-                o=new OutlierSpec();
-                tsSpec.getTramoSpecification().setOutliers(o);
-            }
-    /*
-"outlier.tcrate":0.7
-"outlier.usedefcv":true/false
-            * /
-            if(outlierAo) o.add(OutlierType.AO);
-            if(outlierTc) o.add(OutlierType.TC);
-            if(outlierLs) o.add(OutlierType.LS);
-            if(outlierSo) o.add(OutlierType.SO);
-            o.setEML(outlierEml);
-            o.setCriticalValue(outlierCv);
-            //o.setDeltaTC(outlierTcrate);
-            try {
-                if (!isNull(outlierFrom)&&!isNull(outlierTo)) {
-                    TsPeriodSelector period=new TsPeriodSelector();
-                    Day from = Day.fromString(outlierFrom);
-                    Day to = Day.fromString(outlierTo);
-                    period.between(from, to);
-                    period.excluding(outlierExclFirst, outlierExclLast);
-                    period.first(outlierFirstN);
-                    period.last(outlierLastN);
-                    o.setSpan(period);
-                }
-            } catch (Exception e) {
-            }
-        }
-    }
-    private void setAutoModeling(){
-        AutoModelSpec aspec = tsSpec.getTramoSpecification().getAutoModel();
-        if (aspec==null) {
-            aspec=new AutoModelSpec();
-            tsSpec.getTramoSpecification().setAutoModel(aspec);
-        }
-        /*
-"automdl.armalimit":1, 
-"automdl.reducecv":0.12, 
-"automdl.ljungboxlimit":0.95, 
-
-        * /
-        aspec.setEnabled(automdlEnabled);
-        aspec.setAcceptDefault(automdlAcceptdefault);
-        aspec.setCancel(automdlCancel);
-        aspec.setUb1(automdlUb1);
-        aspec.setUb2(automdlUb2);
-        aspec.setAmiCompare(automdlCompare);
-        //aspec.setPc(double value);
-        //aspec.setPcr(double value);
-        //aspec.setTsig(double value);
-    }
-    private void setArima() {
-        ArimaSpec aspec = tsSpec.getTramoSpecification().getArima();
-        if (aspec==null) {
-            aspec=new ArimaSpec();
-            tsSpec.getTramoSpecification().setArima(aspec);
-        }
-/*
-"arima.coefEnabled":true/false, 
-"arima.coef":"NA" o vettore di coefficienti
-"arima.coefType":"NA", o vettore di procedure di stima
-* /
-        aspec.setMean(arimaMu);
-        aspec.setP(arimaP);
-        aspec.setD(arimaD);
-        aspec.setQ(arimaQ);
-        aspec.setBD(arimaP);
-        aspec.setBP(arimaBP);
-        aspec.setBD(arimaBD);
-        aspec.setBQ(arimaBQ);
-    }
-    private void setSeats(){
-        SeatsSpecification sspec = tsSpec.getSeatsSpecification();
-        if (sspec==null) {
-            sspec=new SeatsSpecification();
-            tsSpec.setSeatsSpecification(sspec);
-        }
-        /*"seats.maBoundary":0.95,* /
-        sspec.setPredictionLength(seatsPredictionLength);
-        sspec.setApproximationMode(SeatsSpecification.ApproximationMode.valueOf(seatsApprox));
-        sspec.setTrendBoundary(seatsTrendBoundary);
-        sspec.setSeasBoundary(seatsSeasdBoundary);
-        sspec.setSeasBoundary1(seatsSeasdBoundary1);
-        sspec.setSeasTolerance(seatsSeasTol);
-        sspec.setMethod(SeatsSpecification.EstimationMethod.valueOf(seatsMethod));
-    }*/
     
     public String getSeriesName() {
         return seriesName;

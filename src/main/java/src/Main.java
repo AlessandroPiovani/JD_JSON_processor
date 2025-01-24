@@ -3,11 +3,9 @@ package src;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ec.satoolkit.algorithm.implementation.TramoSeatsProcessingFactory;
-import ec.satoolkit.diagnostics.QSTest;
 import ec.satoolkit.tramoseats.TramoSeatsSpecification;
 import ec.tstoolkit.algorithm.CompositeResults;
 import ec.tstoolkit.algorithm.ProcessingContext;
-import ec.tstoolkit.information.StatisticalTest;
 import ec.tstoolkit.jdr.ws.MultiProcessing;
 import ec.tstoolkit.jdr.ws.Workspace;
 import ec.tstoolkit.timeseries.simplets.TsData;
@@ -37,7 +35,8 @@ public class Main {
             //Map<String, TsData> tsDataMap = reader.readData(localpath + "\\rawdata_db_istat_format.csv");           
             String directoryPathExtReg = localpath + "\\regr\\";
 
-            String filePath = localpath + "\\specifications_new_full_TUR.txt";
+            //String filePath = localpath + "\\specifications_new_full_TUR_NO_Ramps_and_Iv.txt";
+            String filePath = localpath + "\\specifications_new_full_TUR_Ramps_and_Iv.txt";
             //String filePath = localpath + "\\specifications_db.txt";
             List<Map<String, Object>> jsonData = JsonReader.readJsonFile(filePath);
           
