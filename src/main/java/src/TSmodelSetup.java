@@ -6,6 +6,7 @@ import ec.tstoolkit.Parameter;
 import ec.tstoolkit.ParameterType;
 import ec.tstoolkit.algorithm.ProcessingContext;
 import ec.tstoolkit.modelling.DefaultTransformationType;
+import ec.tstoolkit.modelling.RegressionTestType;
 import ec.tstoolkit.modelling.TsVariableDescriptor;
 import ec.tstoolkit.modelling.arima.tramo.ArimaSpec;
 import ec.tstoolkit.modelling.arima.tramo.AutoModelSpec;
@@ -29,6 +30,8 @@ import ec.tstoolkit.timeseries.simplets.TsData;
 import ec.tstoolkit.timeseries.simplets.TsFrequency;
 import ec.tstoolkit.timeseries.simplets.TsPeriod;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -330,6 +333,7 @@ public class TSmodelSetup {
             tdspec.setStockTradingDays(w);
         }
         tdspec.setTest(model.isTradingdaysTest());
+        tdspec.setRegressionTestType(RegressionTestType.valueOf(model.getTradingdaysTest())); // Added 28/01/2025
     }
 
     private void setUserDefinedVariables(String directoryPathExtReg)
@@ -1033,8 +1037,16 @@ public class TSmodelSetup {
                     dayEnd  = new Day(dateEnd);
 
                     interventionVar.add(dayStart, dayEnd);
+                    
+                    // Fix coefficients
+                    if(iv.getFixed_coef()!=0.0)
+                    {
+                        String deltaStr  = TSmodelSetup.getDeltaStr(iv);
+                        String ivName = "{I:" + s.getStart() + "$" + s.getEnd()+"}"+deltaStr;
+                        tsSpec.getTramoSpecification().getRegression().setFixedCoefficients(ivName, new double[]{iv.getFixed_coef()});
+                    } 
+                    
                 }    
-
                 tsSpec.getTramoSpecification().getRegression().add(interventionVar);
             }
         }
@@ -1177,5 +1189,28 @@ public class TSmodelSetup {
         
         return CV;
     }        
+
+    private static String getDeltaStr(InterventionVariablesInfo iv)
+    {
+        boolean deltaPresent  = (iv.getDelta()   != 0.0);
+        boolean deltaSpresent = (iv.getDelta_s() != 0.0);
+        String result=null;
+        
+        if(!deltaPresent && !deltaSpresent)
+        {
+            result = "";
+        } else if(!deltaPresent && deltaSpresent)
+        {
+            result = "(deltas="+Double.toString(iv.getDelta_s()).replace('.', ',')+")";
+        } else if(!deltaPresent && deltaSpresent)   
+        {
+            result = "(delta="+Double.toString(iv.getDelta()).replace('.', ',')+")";       
+        } else if(deltaPresent && deltaSpresent)
+        {
+            result = "(delta="+Double.toString(iv.getDelta()).replace('.', ',')+", deltas="+Double.toString(iv.getDelta_s()).replace('.', ',')+")";       
+        }    
+
+        return result;
+    }
     
 }

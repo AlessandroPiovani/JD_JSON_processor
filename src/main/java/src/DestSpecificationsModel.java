@@ -506,6 +506,10 @@ public class DestSpecificationsModel {
         this.tradingdaysTest = tradingdaysTest;
         tradingdaysTestB=(!isNull(tradingdaysTest) && "true".equals(tradingdaysTest.toLowerCase()));
     }
+    
+    public String getTradingdaysTest() {
+        return(tradingdaysTest);
+    }
 
     public String getEasterType() {
         return easterType;

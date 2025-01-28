@@ -171,37 +171,14 @@
                             </item>
                             <item name="arima">
 <subset>
-    <item name="mu">
-        <param/>
-    </item>
-    <item name="phi">
-        <params>
-            <coef/>
-        </params>
-    </item>
     <item name="theta">
         <params>
-            <coef type="Fixed">
-                <value>0.11</value>
-            </coef>
-            <coef type="Fixed">
-                <value>0.1</value>
-            </coef>
             <coef/>
-        </params>
-    </item>
-    <item name="bphi">
-        <params>
-            <coef type="Fixed">
-                <value>0.2</value>
-            </coef>
         </params>
     </item>
     <item name="btheta">
         <params>
-            <coef type="Fixed">
-                <value>0.34</value>
-            </coef>
+            <coef/>
         </params>
     </item>
 </subset>
@@ -326,15 +303,14 @@
     <item name="mu">
         <param/>
     </item>
-    <item name="phi">
-        <params>
-            <coef type="Fixed">
-                <value>0.7</value>
-            </coef>
-        </params>
-    </item>
     <item name="d">
         <integer>0</integer>
+    </item>
+    <item name="theta">
+        <params>
+            <coef/>
+            <coef/>
+        </params>
     </item>
     <item name="btheta">
         <params>
@@ -796,13 +772,6 @@
     <family>Modelling</family>
 </method>
                             </item>
-                            <item name="transform">
-<subset>
-    <item name="function">
-        <string>Auto</string>
-    </item>
-</subset>
-                            </item>
                             <item name="arima">
 <subset>
     <item name="mu">
@@ -823,16 +792,7 @@
                             <item name="automdl">
 <subset>
     <item name="enabled">
-        <boolean>true</boolean>
-    </item>
-</subset>
-                            </item>
-                            <item name="outlier">
-<subset>
-    <item name="types">
-        <strings>
-            <items>AO LS TC</items>
-        </strings>
+        <boolean>false</boolean>
     </item>
 </subset>
                             </item>
@@ -868,9 +828,6 @@
                             </item>
                             <item name="arima">
 <subset>
-    <item name="mu">
-        <param/>
-    </item>
     <item name="theta">
         <params>
             <coef/>
@@ -886,16 +843,7 @@
                             <item name="automdl">
 <subset>
     <item name="enabled">
-        <boolean>true</boolean>
-    </item>
-</subset>
-                            </item>
-                            <item name="outlier">
-<subset>
-    <item name="types">
-        <strings>
-            <items>AO LS TC</items>
-        </strings>
+        <boolean>false</boolean>
     </item>
 </subset>
                             </item>

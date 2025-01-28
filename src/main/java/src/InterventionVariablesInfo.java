@@ -23,6 +23,9 @@ public class InterventionVariablesInfo {
     @JsonProperty ("D1DS")
     private boolean D1DS;
     
+    @JsonProperty ("fixed_coef")
+    private double fixed_coef;
+    
     public void setDelta(double delta) {
         this.delta = delta;
     }
@@ -54,5 +57,12 @@ public class InterventionVariablesInfo {
     public void setD1DS(boolean D1DS) {
         this.D1DS = D1DS;
     }
-    
+ 
+    public double getFixed_coef() {
+        return fixed_coef;
+    }
+
+    public void setFixed_coef(double fixed_coef) {
+        this.fixed_coef = fixed_coef;
+    }
 }
